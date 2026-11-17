@@ -269,3 +269,67 @@ trajspec/nusc_data.py::pack_sample_full
 其官方评测已在本机验证通过：用 `PlanningMetric` + `vad_gt_seg.pkl` 重新评分论文
 产物，得到 UniAD L2 = 0.210 / 0.606 / 1.234，与论文的 0.21 / 0.61 / 1.23 一致。
 所以 `scripts/score_plan_official.py` 对 OpenDrive 是可信的官方口径。
+
+---
+
+# 官方协议评测：找到并修复了 AutoVLA 官方脚本的加载 bug
+
+## 官方 val 数据已生成
+
+DriveLM 标注（`v1_1_train_nus.json`）是 gated 的，但**官方 val 预处理不需要它**：
+
+```
+bash scripts/run_nuscenes_preprocessing.sh --val-only
+  → tools/preprocessing/nusc_sample_generation.py --split val
+```
+
+实测：34149 个 sample 中生成 **5569 帧**有效 val（需 4 帧历史 + 6 帧未来），
+跳过 450 帧。输出在 `/data3/autovla_nusc/nuscenes_val`，每帧一个 JSON，
+字段与官方一致（`velocity`、`acceleration`、`gt_trajectory`、`future_mask`、
+六路相机路径、`instruction`）。
+
+## 官方 `nusc_eval.py` 的权重加载是坏的
+
+按官方脚本原样跑，模型输出自然语言（`"continue straight ahead"`），
+**一个 `<action_i>` token 都不出**。原因：
+
+```python
+sd = torch.load(ckpt)['state_dict']
+model.autovla.load_state_dict(sd, strict=False)   # 官方写法
+```
+
+checkpoint 的 key 是 `autovla.vlm.model.layers.*`（transformers 4.x 命名），
+而 `SFTAutoVLA` 里的成员叫 `vlm`，且 transformers 5.x 把语言模型放到了
+`vlm.model.language_model.*`。直接 `strict=False` 加载的结果：
+
+```
+missing=825  unexpected=825      # 一个参数都没载上，模型是随机初始化
+```
+
+必须重映射（见 `scripts/eval_official_autovla_l2.py::_remap`）：
+
+```
+autovla.vlm.visual.*                     -> vlm.model.visual.*
+autovla.vlm.model.layers.*               -> vlm.model.language_model.layers.*
+autovla.vlm.model.embed_tokens/norm.*    -> vlm.model.language_model.embed_tokens/norm.*
+```
+
+重映射后 `missing=0 unexpected=0`，模型开始正常输出 action token。
+
+## 官方口径的首批数字
+
+20 帧 smoke（官方数据 + 官方 `PlanningMetric.compute_L2`）：
+
+| | ST-P3 1/2/3s | UniAD 1/2/3s |
+|---|---|---|
+| 官方口径 | 0.5666 / 0.9710 / **1.4827** | 0.7560 / 1.5915 / **2.8812** |
+| 此前 VAD 口径（同一权重）| 0.4023 / 0.9106 / 1.6191 | 0.5734 / 1.7528 / 3.5071 |
+
+两者差别显著（3 s 端 1.48 vs 1.62），**证明之前的绝对值确实不可用于论文**。
+全量 5569 帧正在跑（`/data3/autovla_nusc/official_l2_full.json`）。
+
+## 碰撞率仍缺
+
+`nusc_eval_seg`（README 的 Google Drive 链接）本机没有，官方
+`PlanningMetric.update()` 强制需要 segmentation，所以当前只报 L2。
+补碰撞率需要下载该数据集。
