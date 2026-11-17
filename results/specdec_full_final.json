@@ -1,0 +1,48 @@
+{
+  "accept_thresholds_m": {"lon": 0.5, "lat": 0.3},
+  "method": {
+    "draft": "bicycle prior (speed, accel, yaw-rate) + residual MLP on prefill hidden and 16-d ego extras; supervised on teacher waypoints",
+    "verify": "longest prefix inside lon/lat metre box; first fail replaced by teacher waypoint then teacher suffix",
+    "speedup_definition": "decode-step accounting: spec_steps = 1 parallel verify + remaining serial teacher steps. NOT wall-clock speculative decoding (no parallel token verify implemented)."
+  },
+  "baselines_before_this_run": {
+    "autovla_straight_line_draft_mean_n_accept": 0.57,
+    "autovla_old_mlp_inner_val_mean_n_accept": 2.98,
+    "opendrive_old_mlp_midcache_mean_n_accept": 2.17
+  },
+  "autovla": {
+    "teacher": "AutoVLA Qwen2.5-VL-3B, AR action tokens",
+    "train_cache_n": 2500,
+    "eval": "nuScenes val, stride 2, 2000 frames, held-out from train cache",
+    "mean_n_accept": 3.757,
+    "mean_decode_speedup_accounting": 3.258,
+    "frac_accept_ge2": 0.976,
+    "frac_accept_ge4": 0.483,
+    "frac_accept_6": 0.205,
+    "accept_dist": {"0": 0.001, "1": 0.024, "2": 0.175, "3": 0.317, "4": 0.19, "5": 0.089, "6": 0.205},
+    "teacher_stp3_l2": {"1s": 0.3652, "2s": 0.7517, "3s": 1.2775},
+    "spec_stp3_l2": {"1s": 0.3592, "2s": 0.7454, "3s": 1.2739},
+    "ckpt": "results/specdec_autovla_heldout.pt",
+    "json": "results/specdec_autovla_heldout.json"
+  },
+  "opendrive": {
+    "teacher": "OpenDriveVLA-0.5B + UniAD scene/track/map, official AR generate",
+    "hidden_cache_n": 6019,
+    "eval": "hash 15% holdout of nuScenes val hiddens (903); draft trained on the other 5116 of the same official val split (no separate OD train-set cache)",
+    "mean_n_accept": 4.009,
+    "mean_decode_speedup_accounting": 3.896,
+    "frac_accept_ge2": 0.852,
+    "frac_accept_ge4": 0.626,
+    "frac_accept_6": 0.388,
+    "accept_dist": {"0": 0.101, "1": 0.048, "2": 0.092, "3": 0.134, "4": 0.141, "5": 0.097, "6": 0.388},
+    "teacher_stp3_l2_unmasked_subset": {"1s": 0.6721, "2s": 1.2168, "3s": 1.8724, "n_with_gt": 651},
+    "spec_stp3_l2_unmasked_subset": {"1s": 0.6972, "2s": 1.2324, "3s": 1.8806},
+    "official_teacher_planning_full_val_6019": {
+      "uniad_l2": {"1s": 0.21, "2s": 0.61, "3s": 1.23, "avg": 0.68},
+      "stp3_l2": {"1s": 0.15, "2s": 0.32, "3s": 0.57, "avg": 0.35},
+      "source": "results/eval_results.log occupancy+traj mask"
+    },
+    "ckpt": "results/specdec_opendrive_heldout.pt",
+    "json": "results/specdec_opendrive_heldout.json"
+  }
+}
