@@ -1,0 +1,19 @@
+{
+  "which": "auto",
+  "kind": "wide",
+  "width": 1024,
+  "params_M": 19.341,
+  "steps": 8000,
+  "train_accept": 4.575,
+  "val_accept": 3.6795,
+  "val_full6": 0.126,
+  "val_dist": [
+    7,
+    52,
+    326,
+    637,
+    398,
+    328,
+    252
+  ]
+}

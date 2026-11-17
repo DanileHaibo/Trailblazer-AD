@@ -140,6 +140,23 @@ results/             paper and reproduction JSONs (weights excluded)
 repro/               README + paper-vs-repro comparison
 ```
 
+## Draft head diagnostics
+
+`diag/REPORT.md` documents why the current draft is close to its information
+limit, and which improvement routes were falsified by experiment:
+
+| idea | measured outcome |
+|---|---|
+| bigger head | 19M params: train accept 5.997 / **val 3.679** (base 3.885) |
+| more data | 12146 out-of-domain frames: val **2.403** |
+| hidden instead of kinematics | kin_only 3.778 / hidden_only 3.791 / both 3.782 |
+| post-hoc bias removal | 4.070 -> 4.099, noise std 1.57 m unremovable |
+| tapered thresholds | equivalent to a scaled fixed box (<0.001 ADE apart) |
+
+The single effective knob is the accept box itself.
+`results/diag_threshold_sweep.json` holds the trade-off curve for both teachers,
+e.g. AutoVLA 3.778 -> 4.854 accept as the box widens 0.50/0.30 -> 1.00/0.60 m.
+
 ## Limitations
 
 - Reported `decode_speedup` (3.3x / 4.0x) is **decode-step accounting**

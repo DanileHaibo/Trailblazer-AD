@@ -1,0 +1,38 @@
+[
+  {
+    "config": "navtest_all",
+    "train_n": 12146,
+    "steps": 8000,
+    "val_accept": 2.403,
+    "val_full6": 0.0325,
+    "val_mae": 0.6707,
+    "best_during_train": 2.403,
+    "dist": [
+      3,
+      394,
+      975,
+      300,
+      143,
+      120,
+      65
+    ]
+  },
+  {
+    "config": "nusc+navall",
+    "train_n": 14646,
+    "steps": 8000,
+    "val_accept": 3.1855,
+    "val_full6": 0.0605,
+    "val_mae": 0.4031,
+    "best_during_train": 3.1855,
+    "dist": [
+      2,
+      142,
+      468,
+      660,
+      448,
+      159,
+      121
+    ]
+  }
+]
