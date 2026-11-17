@@ -204,3 +204,68 @@ OpenDrive 未受影响：论文用的 903 holdout 来自全量 hash 抽样，无
 - 必须说明 AutoVLA 的 teacher 在 3 s 处输出方差极小（恒定 ~17.3 m），
   这是它的模型特性，也解释了为什么 accept 对场景不敏感。
 - 2000 帧子集的结果若保留，需注明是子集且系统性偏乐观 0.34 m。
+
+---
+
+# 重要更正：AutoVLA 的 1.619 不是论文分数
+
+日期 2026-11-17。经核查，此前所有 AutoVLA 数字（含 native 1.619、spec 1.604）
+**不能与 AutoVLA 论文的 nuScenes 开环分数直接比较**。
+
+## 权重是对的
+
+`/data2/hf_overlap_models/AutoVLA/AutoVLA_PDMS_89.ckpt`（16.3 GB）
+是官方 HF 发布的 checkpoint，`AutoVLA_PDMS_89` 即 PDMS 89 的 nuPlan 权重。
+加载后 `missing=0 unused=0`，与原始权重一致。
+
+## 错在评测协议
+
+官方 nuScenes 评测路径（`AutoVLA/README.md`）：
+
+```
+tools/eval/nusc_eval.py
+  --config config/eval/qwen2.5-vl-3B-nusc-sft-eval.yaml
+  --checkpoint ... --seg_data_path .../nusc_eval_seg
+  → SFTDataset(config['data']['val'])       # ./dataset/nuscenes/nuscenes_val
+  → builder.compute_features(scene_data)     # DriveLM 格式
+  → builder.compute_targets(scene_data)      # gt_pos_raw
+  → PlanningMetric(6) + segmentation         # L2 + 碰撞率
+```
+
+本项目用的是：
+
+```
+trajspec/nusc_data.py::pack_sample_full
+  → VAD temporal pkl（gt_ego_fut_trajs / gt_ego_lcf_feat）
+  → 纯 L2 vs VAD GT，无 occupancy、无碰撞率
+```
+
+三处实质差异：
+
+| 项目 | 官方 | 本项目 |
+|---|---|---|
+| 数据 | DriveLM JSON `nuscenes_val/` | VAD temporal pkl |
+| 速度输入 | `vehicle_velocity` 场景标注 | `lcf[7]` 纵向速度 |
+| 评分 | `PlanningMetric` + occupancy seg | 纯 L2 |
+| 采样 | 配置 `temperature: 0.01` | `do_sample=False` |
+
+## 缺什么（本机均无）
+
+- DriveLM 标注 `v1_1_train_nus.json`（约 10 GB）
+- 官方 `nusc_eval_seg`（Google Drive，README 链接）
+- `AutoVLA/dataset/` 目录整个不存在
+
+已全盘搜索 `/data1 /data2 /data3 /data4 /home`，三项均未找到。
+
+## 因此
+
+1. **AutoVLA 论文分数目前无法在本机复现**，需要先下载上述数据。
+2. 现有 1.619 / 1.604 的用途仅限于：**在 VAD 口径下做 native vs spec 的相对比较**。
+   相对关系（spec 优于 native、接缝校正优于硬拼接）仍然成立且可信。
+3. 论文里引用 AutoVLA 绝对值时必须用官方 `nusc_eval.py` 重跑，或直接引用原论文。
+
+## OpenDriveVLA 不受影响
+
+其官方评测已在本机验证通过：用 `PlanningMetric` + `vad_gt_seg.pkl` 重新评分论文
+产物，得到 UniAD L2 = 0.210 / 0.606 / 1.234，与论文的 0.21 / 0.61 / 1.23 一致。
+所以 `scripts/score_plan_official.py` 对 OpenDrive 是可信的官方口径。

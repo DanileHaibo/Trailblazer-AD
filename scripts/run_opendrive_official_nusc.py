@@ -37,6 +37,7 @@ def parse_args():
     p.add_argument("--num-workers", type=int, default=0)
     p.add_argument("--bf16", action="store_true", default=True)
     p.add_argument("--attn-implementation", default="sdpa")
+    p.add_argument("--resume", action="store_true", help="append to an existing jsonl, skipping done ids")
     return p.parse_args()
 
 
@@ -87,11 +88,25 @@ def main():
 
     out_path = Path(args.output)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    if out_path.exists():
+    done_ids: set[str] = set()
+    if args.resume and out_path.exists():
+        with out_path.open() as f:
+            for line in f:
+                try:
+                    done_ids.add(json.loads(line)["id"])
+                except Exception:
+                    pass
+        print(f"[resume] {len(done_ids)} already written, appending", flush=True)
+    elif out_path.exists():
         out_path.unlink()
 
     t0 = time.time()
     for i, data in enumerate(tqdm(loader, ncols=100)):
+        _sid = data["id"]
+        if isinstance(_sid, (list, tuple)):
+            _sid = _sid[0]
+        if args.resume and _sid in done_ids:
+            continue
         data = move_data_to_device(data, device)
         with torch.inference_mode():
             cont = model.generate(
