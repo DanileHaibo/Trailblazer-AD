@@ -11,7 +11,7 @@ import torch
 from qwen_vl_utils import process_vision_info
 from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
-sys.path.insert(0, os.environ.get("TRAJSPEC_AUTOVLA_REPO", "/home/xinhchen2/hhb/AutoVLA"))
+sys.path.insert(0, "/home/xinhchen2/hhb/AutoVLA")
 from models.action_tokenizer import ActionTokenizer  # noqa: E402
 
 
@@ -37,11 +37,9 @@ class AutoVLARuntime:
 
     def __init__(
         self,
-        qwen_path: str = os.environ.get("TRAJSPEC_QWEN25VL_PATH", "/data2/hf_overlap_models/Qwen2.5-VL-3B-Instruct"),
-        ckpt_path: str = os.environ.get("TRAJSPEC_AUTOVLA_CKPT", "/data2/hf_overlap_models/AutoVLA/AutoVLA_PDMS_89.ckpt"),
-        codebook_path: str = os.environ.get(
-            "TRAJSPEC_AUTOVLA_CODEBOOK", "/home/xinhchen2/hhb/AutoVLA/codebook_cache/agent_vocab.pkl"
-        ),
+        qwen_path: str = "/data2/hf_overlap_models/Qwen2.5-VL-3B-Instruct",
+        ckpt_path: str = "/data2/hf_overlap_models/AutoVLA/AutoVLA_PDMS_89.ckpt",
+        codebook_path: str = "/home/xinhchen2/hhb/AutoVLA/codebook_cache/agent_vocab.pkl",
         device: str = "cuda",
         use_cot: bool = False,
         temperature: float | None = None,
@@ -461,6 +459,15 @@ class AutoVLARuntime:
                 t_tail, committed = _ms(_tail)
                 n_serial = need
             xy = action_ids_to_xy(committed[:horizon], pack["cb"])
+            # Seam repair: the committed action ids decode to a path that jumps
+            # at the reject index. Blend into the decoded suffix along the
+            # *decoded* prefix's own velocity (never the unquantized draft_xy,
+            # which would overwrite already-quantized accepted points).
+            if 0 < n_acc < min(horizon, xy.shape[0]):
+                from trajspec.sd_baselines import seam_blend
+
+                xy = seam_blend(xy, xy, n_acc, horizon=min(horizon, xy.shape[0]))
+            xy = torch.as_tensor(xy, dtype=torch.float32).cpu()
         if xy.shape[0] < horizon:
             pad = xy[-1:].repeat(horizon - xy.shape[0], 1) if xy.shape[0] else torch.zeros(horizon, 2)
             xy = torch.cat([xy, pad], dim=0)[:horizon]
@@ -485,6 +492,7 @@ class AutoVLARuntime:
             "draft_xy": draft_xy[:horizon].tolist(),
             "teacher_verify_xy": teacher_xy[:horizon].tolist() if teacher_xy.numel() else [],
         }
+        info = {k: (v.tolist() if isinstance(v, torch.Tensor) else v) for k, v in info.items()}
         return xy.numpy().astype("float32") if hasattr(xy, "numpy") else xy.cpu().numpy().astype("float32"), info
 
     @torch.inference_mode()

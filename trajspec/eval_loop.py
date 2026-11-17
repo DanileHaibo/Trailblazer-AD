@@ -33,7 +33,7 @@ def l2_uniad_at(pred: np.ndarray, gt: np.ndarray) -> dict:
     return {"l2_at_1s": at(1), "l2_at_2s": at(3), "l2_at_3s": at(5)}
 
 
-def spec_from_draft(draft, teacher, cfg: AcceptConfig, horizon: int = 6):
+def spec_from_draft(draft, teacher, cfg: AcceptConfig, horizon: int = 6, seam: str = "blend"):
     d = torch.as_tensor(draft[:, :2], dtype=torch.float32)
     t = torch.as_tensor(teacher[:, :2], dtype=torch.float32)
     k = min(d.shape[0], t.shape[0], horizon)
@@ -42,13 +42,18 @@ def spec_from_draft(draft, teacher, cfg: AcceptConfig, horizon: int = 6):
         spec = d[:k]
         steps = 1
     else:
-        parts = []
-        if n > 0:
-            parts.append(d[:n])
-        parts.append(t[n : n + 1])
-        if n + 1 < t.shape[0]:
-            parts.append(t[n + 1 : k])
-        spec = torch.cat(parts, dim=0)[:k]
+        from trajspec.sd_baselines import seam_blend
+
+        if str(seam) == "blend":
+            spec = seam_blend(d[:k], t[:k], n, horizon=k)
+        else:
+            parts = []
+            if n > 0:
+                parts.append(d[:n])
+            parts.append(t[n : n + 1])
+            if n + 1 < t.shape[0]:
+                parts.append(t[n + 1 : k])
+            spec = torch.cat(parts, dim=0)[:k]
         steps = 1 + max(k - n - 1, 0)
     return spec.numpy(), n, steps
 

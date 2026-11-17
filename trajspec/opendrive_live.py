@@ -294,6 +294,13 @@ def spec_commit_opendrive(pack: dict, accept_cfg, accept_mode: str = "geometric"
         spec_np = spec_ego.numpy().astype("float32")
     else:
         spec_np = spec_ego
+    # Seam repair: blend the accepted draft prefix into the teacher suffix along
+    # the draft's own velocity so the splice is continuous (no extra teacher call).
+    if 0 < n_acc < int(spec_np.shape[0]):
+        from trajspec.sd_baselines import seam_blend
+
+        kk = min(int(spec_np.shape[0]), horizon)
+        spec_np = seam_blend(draft_ego[:kk], torch.as_tensor(spec_np[:kk]), n_acc, horizon=kk).numpy().astype("float32")
     return spec_np, info
 
 

@@ -109,7 +109,12 @@ def speculative_trajectory(
                 suffix = teacher.continue_decode(scene, kv, accepted_so_far, rest)
                 if suffix.numel() > 0:
                     parts.append(suffix[:rest])
-        traj = torch.cat(parts, dim=0)[:H]
+        hard = torch.cat(parts, dim=0)[:H]
+        # Hand over to the teacher along the draft's own velocity so the splice
+        # is continuous (see trajspec.sd_baselines.seam_blend).
+        from trajspec.sd_baselines import seam_blend
+
+        traj = seam_blend(draft[:H], hard, n_acc, horizon=H) if n_acc < H else hard
         # 1 verify + remaining serial decode tokens after the correction
         spec_steps = 1 + max(H - n_acc - 1, 0)
         extra_reject = True
