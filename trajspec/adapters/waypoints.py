@@ -14,6 +14,7 @@ Output format: "Planned Trajectory:\\n[(x1,y1), (x2,y2), ... , (x6,y6)]"
 """
 from __future__ import annotations
 
+import os
 import re
 import time
 from pathlib import Path
@@ -21,7 +22,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
-MODEL_DIR = "/data2/hf_overlap_models/nuscenes-waypoints-model"
+MODEL_DIR = os.environ.get(
+    "TRAJSPEC_RNB_CKPT", "/data2/hf_overlap_models/nuscenes-waypoints-model"
+)
 
 SYSTEM_MESSAGE = """**Autonomous Driving Planner**
 Role: You're an autonomous vehicle's brain. Given an image of the current scenario, plan a 3-second safe trajectory to avoid obstacles.

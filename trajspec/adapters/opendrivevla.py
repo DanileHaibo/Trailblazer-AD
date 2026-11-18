@@ -115,7 +115,7 @@ class OpenDriveLMRuntime:
 
     def __init__(
         self,
-        ckpt: str = "/data2/hf_overlap_models/OpenDriveVLA-0.5B",
+        ckpt: str = os.environ.get("TRAJSPEC_OPENDRIVE_CKPT", "/data2/hf_overlap_models/OpenDriveVLA-0.5B"),
         device: str = "cuda",
     ):
         from safetensors.torch import load_file

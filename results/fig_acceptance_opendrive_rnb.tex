@@ -1,0 +1,61 @@
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  name=meanax,
+  width=0.22\textwidth,
+  height=0.28\textwidth,
+  ymin=0, ymax=6.5,
+  ytick={0,2,4,6},
+  symbolic x coords={OpenDriveVLA,R\&B-EnCoRe},
+  xtick=data,
+  x tick label style={font=\scriptsize, rotate=15, anchor=east},
+  ylabel={$\bar{n}_{\mathrm{acc}}$},
+  ylabel style={font=\small},
+  title={Mean accept},
+  title style={font=\small},
+  bar width=12pt,
+  enlarge x limits=0.35,
+  nodes near coords,
+  every node near coord/.append style={font=\scriptsize},
+  ymajorgrids=true,
+  major grid style={gray!20},
+]
+\addplot[ybar, fill=blue!55, draw=none] coordinates
+  {(OpenDriveVLA,4.18) (R\&B-EnCoRe,4.60)};
+\end{axis}
+
+\begin{axis}[
+  at={(meanax.east)},
+  anchor=west,
+  xshift=0.04\textwidth,
+  width=0.28\textwidth,
+  height=0.28\textwidth,
+  ymin=0, ymax=105,
+  ytick={0,25,50,75,100},
+  symbolic x coords={$\ge$2,$\ge$4,$=6$},
+  xtick=data,
+  ylabel={Fraction (\%)},
+  ylabel style={font=\small},
+  title={Acceptance thresholds},
+  title style={font=\small},
+  ybar,
+  bar width=7pt,
+  enlarge x limits=0.25,
+  legend style={font=\scriptsize, at={(0.98,0.98)}, anchor=north east, draw=none},
+  ymajorgrids=true,
+  major grid style={gray!20},
+  nodes near coords,
+  every node near coord/.append style={font=\tiny},
+]
+\addplot[fill=blue!55, draw=none] coordinates
+  {($\ge$2,87.2) ($\ge$4,66.8) ($=6,40.6)};
+\addplot[fill=orange!70, draw=none] coordinates
+  {($\ge$2,95.1) ($\ge$4,76.0) ($=6,42.8)};
+\legend{OpenDriveVLA, R\&B-EnCoRe}
+\end{axis}
+\end{tikzpicture}
+\caption{Waypoint acceptance on nuScenes val. Left: mean accepted waypoints out of 6.
+Right: fraction of frames with at least 2 / 4 / all 6 waypoints accepted.}
+\label{fig:acceptance}
+\end{figure}

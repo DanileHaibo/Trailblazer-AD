@@ -42,7 +42,7 @@ def summarize(xs):
     }
 
 
-def iter_valid(infos, stride, limit, start=0):
+def iter_valid(infos, stride, limit, start=0, shard=0, num_shards=1):
     tok2i = token_index(infos)
     n = 0
     n_valid = 0
@@ -50,16 +50,42 @@ def iter_valid(infos, stride, limit, start=0):
         feat = pack_sample_rnb(infos, i, tok2i)
         if feat is None:
             continue
-        take = (n_valid % max(stride, 1)) == 0
+        if num_shards > 1:
+            take = (n_valid % num_shards) == shard
+        else:
+            take = (n_valid % max(stride, 1)) == 0
         n_valid += 1
         if not take:
             continue
-        if n_valid // max(stride, 1) < start:
+        if num_shards <= 1 and n_valid // max(stride, 1) < start:
             continue
         yield feat
         n += 1
         if n >= limit:
             break
+
+
+def _summarize_rows(rows):
+    off_ms = [r["t_official_generate_ms"] for r in rows]
+    spec_ms = [r["spec"]["t_spec_e2e_ms"] for r in rows]
+    accs = [r["n_accept"] for r in rows]
+    mean_off = float(np.mean(off_ms)) if rows else 0.0
+    mean_spec = float(np.mean(spec_ms)) if rows else 0.0
+    return {
+        "n": len(rows),
+        "mean_n_accept": round(float(np.mean(accs)), 3) if rows else 0.0,
+        "official_generate_ms": summarize(off_ms) if rows else {},
+        "spec_e2e_ms": summarize(spec_ms) if rows else {},
+        "prefill_ms": summarize([r["spec"]["t_prefill_ms"] for r in rows]) if rows else {},
+        "verify_ms": summarize([r["spec"]["t_verify_ms"] for r in rows]) if rows else {},
+        "tail_ms": summarize([r["spec"]["t_tail_ms"] for r in rows]) if rows else {},
+        "draft_ms": summarize([r["spec"]["t_draft_ms"] for r in rows]) if rows else {},
+        "speedup_vs_official": round(mean_off / max(mean_spec, 1e-6), 3) if rows else 0.0,
+        "official_ade": round(float(np.mean([r["official"]["ade"] for r in rows])), 4) if rows else 0.0,
+        "spec_ade": round(float(np.mean([r["spec"]["ade"] for r in rows])), 4) if rows else 0.0,
+        "ade_spec_vs_official": round(float(np.mean([r["ade_spec_vs_official"] for r in rows])), 4) if rows else 0.0,
+        "rows": rows,
+    }
 
 
 def main():
@@ -68,8 +94,11 @@ def main():
     p.add_argument("--warmup", type=int, default=2)
     p.add_argument("--stride", type=int, default=80)
     p.add_argument("--start", type=int, default=20)
-    p.add_argument("--ckpt", default=str(ROOT / "results/specdec_rnb_heldout.pt"))
+    p.add_argument("--shard", type=int, default=0)
+    p.add_argument("--num-shards", type=int, default=1)
+    p.add_argument("--ckpt", default=str(ROOT / "weights/draft_waypoints_nusc.pt"))
     p.add_argument("--out", default=str(ROOT / "results/live_specdec_rnb.json"))
+    p.add_argument("--save-every", type=int, default=50)
     args = p.parse_args()
 
     device = torch.device("cuda")
@@ -83,7 +112,15 @@ def main():
 
     rows = []
     seen = 0
-    for s in iter_valid(infos, args.stride, args.n + args.warmup, 0):
+    target = args.n
+    for s in iter_valid(
+        infos,
+        args.stride,
+        args.n + args.warmup,
+        start=args.start,
+        shard=args.shard,
+        num_shards=args.num_shards,
+    ):
         extra = pack_extra(s)
         speed = pack_speed(s)
         gt = np.asarray(s["gt"][:6], dtype=np.float32)
@@ -105,34 +142,23 @@ def main():
         if seen > args.warmup:
             rows.append(rec)
             print(
-                f"[{len(rows)}/{args.n}] tok={s['token'][:8]} acc={spec_info['n_accept']} "
+                f"[shard{args.shard} {len(rows)}/{target}] tok={s['token'][:8]} acc={spec_info['n_accept']} "
                 f"off={t_off:.0f}ms spec={spec_info['t_spec_e2e_ms']:.0f}ms "
                 f"vsT={rec['ade_spec_vs_official']:.2f}",
                 flush=True,
             )
-        if len(rows) >= args.n:
+            if args.save_every > 0 and len(rows) % args.save_every == 0:
+                tmp = _summarize_rows(rows)
+                tmp["shard"] = args.shard
+                tmp["num_shards"] = args.num_shards
+                Path(args.out).write_text(json.dumps(tmp, ensure_ascii=False, indent=2))
+                print(f"[ckpt] {args.out} n={len(rows)}", flush=True)
+        if len(rows) >= target:
             break
 
-    off_ms = [r["t_official_generate_ms"] for r in rows]
-    spec_ms = [r["spec"]["t_spec_e2e_ms"] for r in rows]
-    accs = [r["n_accept"] for r in rows]
-    mean_off = float(np.mean(off_ms))
-    mean_spec = float(np.mean(spec_ms))
-    out = {
-        "n": len(rows),
-        "mean_n_accept": round(float(np.mean(accs)), 3),
-        "official_generate_ms": summarize(off_ms),
-        "spec_e2e_ms": summarize(spec_ms),
-        "prefill_ms": summarize([r["spec"]["t_prefill_ms"] for r in rows]),
-        "verify_ms": summarize([r["spec"]["t_verify_ms"] for r in rows]),
-        "tail_ms": summarize([r["spec"]["t_tail_ms"] for r in rows]),
-        "draft_ms": summarize([r["spec"]["t_draft_ms"] for r in rows]),
-        "speedup_vs_official": round(mean_off / max(mean_spec, 1e-6), 3),
-        "official_ade": round(float(np.mean([r["official"]["ade"] for r in rows])), 4),
-        "spec_ade": round(float(np.mean([r["spec"]["ade"] for r in rows])), 4),
-        "ade_spec_vs_official": round(float(np.mean([r["ade_spec_vs_official"] for r in rows])), 4),
-        "rows": rows,
-    }
+    out = _summarize_rows(rows)
+    out["shard"] = args.shard
+    out["num_shards"] = args.num_shards
     Path(args.out).write_text(json.dumps(out, ensure_ascii=False, indent=2))
     print(json.dumps({k: out[k] for k in out if k != "rows"}, indent=2), flush=True)
     print("[write]", args.out, flush=True)

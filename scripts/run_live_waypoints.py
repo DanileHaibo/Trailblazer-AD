@@ -15,7 +15,7 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path("/home/xinhchen2/hhb/TrajSpecDec")
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import numpy as np
@@ -48,7 +48,7 @@ def main():
     ap.add_argument("--warmup", type=int, default=2)
     ap.add_argument("--stride", type=int, default=8)
     ap.add_argument("--start", type=int, default=0)
-    ap.add_argument("--ckpt", default=str(ROOT / "results/specdec_waypoints.pt"))
+    ap.add_argument("--ckpt", default=str(ROOT / "weights/draft_waypoints_nusc.pt"))
     ap.add_argument("--min-accept", type=int, default=3, help="below this, fall back to native")
     ap.add_argument("--lon", type=float, default=0.5)
     ap.add_argument("--lat", type=float, default=0.3)

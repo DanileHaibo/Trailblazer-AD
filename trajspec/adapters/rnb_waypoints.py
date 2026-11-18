@@ -6,6 +6,7 @@ We convert to ego (+X forward, +Y left) so the Orion draft bicycle prior matches
 """
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -37,7 +38,9 @@ TRAFFIC = """
 - Maintain a safe distance from the objects in front of you.
 """
 
-CKPT_DEFAULT = "/data2/hf_overlap_models/nuscenes-waypoints-model"
+CKPT_DEFAULT = os.environ.get(
+    "TRAJSPEC_RNB_CKPT", "/data2/hf_overlap_models/nuscenes-waypoints-model"
+)
 
 
 def ego_to_od(xy: np.ndarray) -> np.ndarray:
