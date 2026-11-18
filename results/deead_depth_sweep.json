@@ -1,0 +1,395 @@
+{
+  "model": "OpenDriveVLA-0.5B+UniAD",
+  "device": "NVIDIA L20",
+  "n": 6,
+  "start_index": 1500,
+  "n_layers": 24,
+  "by_depth": {
+    "8": {
+      "t_ms": 932.1,
+      "n_tokens": 96.0,
+      "ade_gt": null,
+      "ade_vs_full": 6.693
+    },
+    "12": {
+      "t_ms": 1338.2,
+      "n_tokens": 96.0,
+      "ade_gt": null,
+      "ade_vs_full": 6.693
+    },
+    "16": {
+      "t_ms": 1750.8,
+      "n_tokens": 96.0,
+      "ade_gt": null,
+      "ade_vs_full": 6.693
+    },
+    "18": {
+      "t_ms": 1932.5,
+      "n_tokens": 96.0,
+      "ade_gt": null,
+      "ade_vs_full": 6.693
+    },
+    "20": {
+      "t_ms": 2142.5,
+      "n_tokens": 96.0,
+      "ade_gt": null,
+      "ade_vs_full": 6.693
+    },
+    "22": {
+      "t_ms": 1597.8,
+      "n_tokens": 66.7,
+      "ade_gt": null,
+      "ade_vs_full": 1.799
+    },
+    "24": {
+      "t_ms": 1627.5,
+      "n_tokens": 62.8,
+      "ade_gt": null,
+      "ade_vs_full": 0.3677
+    }
+  },
+  "rows": [
+    {
+      "token": "77a603db4aa247329c0a1aae2a46d18f",
+      "has_gt": false,
+      "t_vis": 427.92,
+      "t_ar": 1195.36,
+      "by_depth": {
+        "8": {
+          "t_ms": 922.16,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.5272,
+          "text_head": "oguilyphicon março功 CATEGORYën unterstüt晗=@\"管理条例\n "
+        },
+        "12": {
+          "t_ms": 1348.28,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.5272,
+          "text_head": "iffanyiutherford Content(Content Forgot�Uuidujet R"
+        },
+        "16": {
+          "t_ms": 1768.58,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.5272,
+          "text_head": "ّgetRoot.mitool�找准 Rencontreederland小时前ifestyles<|"
+        },
+        "18": {
+          "t_ms": 1966.03,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.5272,
+          "text_head": "iffanyjącegogetRoot맙 Auswahl题劼大片大片edly找准㎏ servi äh"
+        },
+        "20": {
+          "t_ms": 2218.06,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.5272,
+          "text_head": "说出来stäröffentlichiae锏ijkenlzifestyles小时前找准㎏重要举措 gr"
+        },
+        "22": {
+          "t_ms": 1684.14,
+          "n_tokens": 68,
+          "ade_gt": null,
+          "ade_vs_full": 7.5272,
+          "text_head": "说出来[(-0.00,-0.00),(-0.00,-0.00),(-0.00,-0.00),(-0."
+        },
+        "24": {
+          "t_ms": 1647.83,
+          "n_tokens": 63,
+          "ade_gt": null,
+          "ade_vs_full": 0.651,
+          "text_head": "<traj_start>[(0.02,2.29),(0.03,4.42),(0.03,6.35),("
+        }
+      }
+    },
+    {
+      "token": "e333147a745b4edb91c01a0c06309f9f",
+      "has_gt": false,
+      "t_vis": 416.26,
+      "t_ar": 1160.24,
+      "by_depth": {
+        "8": {
+          "t_ms": 942.61,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.7904,
+          "text_head": "oguilyphicon março CATEGORYën(foutfäh-lowindsightf"
+        },
+        "12": {
+          "t_ms": 1325.44,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.7904,
+          "text_head": "iffanyийaleigh teil面积约getRoot[�riihanna李getSource方"
+        },
+        "16": {
+          "t_ms": 1766.16,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.7904,
+          "text_head": "ّihannagetSourcelyphiconậy gui爱你讓他李ifestyles小时前劼小时"
+        },
+        "18": {
+          "t_ms": 1930.56,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.7904,
+          "text_head": "iffanyjącegogetKey맙 Auswahl题劼大片大片 Throw@Slf分明小时前找准"
+        },
+        "20": {
+          "t_ms": 2179.21,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.7904,
+          "text_head": "说出来برمجöffentlichiae.mit样小时前ënly大片lding锏找准ing姣分明im"
+        },
+        "22": {
+          "t_ms": 1652.76,
+          "n_tokens": 69,
+          "ade_gt": null,
+          "ade_vs_full": 1.0404,
+          "text_head": "说出来[(-0.00,2.04),(-0.03,3.99),(-0.06,5.87),(-0.09,"
+        },
+        "24": {
+          "t_ms": 1633.17,
+          "n_tokens": 62,
+          "ade_gt": null,
+          "ade_vs_full": 0.4167,
+          "text_head": "<traj_start>[(0.02,2.05),(0.04,3.93),(0.06,5.65),("
+        }
+      }
+    },
+    {
+      "token": "e884c9e0f2414843a89451f7ce015f49",
+      "has_gt": false,
+      "t_vis": 416.34,
+      "t_ar": 1164.2,
+      "by_depth": {
+        "8": {
+          "t_ms": 959.49,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.5701,
+          "text_head": "oguilyphicon março功 CATEGORYën(foutfäh-lowindsight"
+        },
+        "12": {
+          "t_ms": 1354.71,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.5701,
+          "text_head": "iffanyий让她 ContentTypeってくれaleigh teil��ingengeance"
+        },
+        "16": {
+          "t_ms": 1757.35,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.5701,
+          "text_head": "ّgetSourcelyphicongetRoot鹘找准小时前劼小时前小时前 nackt versc"
+        },
+        "18": {
+          "t_ms": 1942.98,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.5701,
+          "text_head": "iffanyjącegogetRoot맙 Auswahl题setIcon딪ostütقсрочDs "
+        },
+        "20": {
+          "t_ms": 2139.03,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 5.5701,
+          "text_head": "说出来 giochi[rip [~,ity大片ld这里有找准ing锏准则олов指导下 rencon"
+        },
+        "22": {
+          "t_ms": 1626.24,
+          "n_tokens": 68,
+          "ade_gt": null,
+          "ade_vs_full": 0.5175,
+          "text_head": "说出来[(-0.00,1.87),(-0.03,3.65),(-0.06,5.35),(-0.09,"
+        },
+        "24": {
+          "t_ms": 1603.97,
+          "n_tokens": 62,
+          "ade_gt": null,
+          "ade_vs_full": 0.0583,
+          "text_head": "<traj_start>[(0.01,1.84),(0.02,3.55),(0.03,5.08),("
+        }
+      }
+    },
+    {
+      "token": "6b34f819cc564c1783f63d88ccf60e07",
+      "has_gt": false,
+      "t_vis": 416.83,
+      "t_ar": 1231.35,
+      "by_depth": {
+        "8": {
+          "t_ms": 928.12,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 6.4078,
+          "text_head": "oguilyphicon marçoUCCEEDED福 CATEGORYën unterstüt晗劼"
+        },
+        "12": {
+          "t_ms": 1360.77,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 6.4078,
+          "text_head": "iffanyiutherford Content(ContentgetRoot��/tag@qqge"
+        },
+        "16": {
+          "t_ms": 1751.08,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 6.4078,
+          "text_head": "ّklägetSourcelyphicongetRoot鹘<|endoftext|>小时前劼小时前 "
+        },
+        "18": {
+          "t_ms": 1929.5,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 6.4078,
+          "text_head": "iffanyjącegogetRoot맙 Auswahl题setIcon딪ostütقсроч se"
+        },
+        "20": {
+          "t_ms": 2135.59,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 6.4078,
+          "text_head": "说出来lyphicon冀指导下getLast madrid小时前맙手机版找准ing锏 Merkeli"
+        },
+        "22": {
+          "t_ms": 1517.69,
+          "n_tokens": 63,
+          "ade_gt": null,
+          "ade_vs_full": 0.2243,
+          "text_head": "说出来[(0.03,1.89),(0.07,3.77),(0.13,5.67),(0.20,7.57"
+        },
+        "24": {
+          "t_ms": 1624.77,
+          "n_tokens": 63,
+          "ade_gt": null,
+          "ade_vs_full": 0.081,
+          "text_head": "<traj_start>[(0.02,1.82),(0.05,3.63),(0.08,5.43),("
+        }
+      }
+    },
+    {
+      "token": "f510104ab7344de79f2daad23e3b6af1",
+      "has_gt": false,
+      "t_vis": 416.15,
+      "t_ar": 1203.81,
+      "by_depth": {
+        "8": {
+          "t_ms": 923.57,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.4656,
+          "text_head": "oguilyphicon março功 CATEGORYën(fout鹘 findenLAYifes"
+        },
+        "12": {
+          "t_ms": 1330.03,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.4656,
+          "text_head": "iffanyiutherford Content(ContentgetRoot� сдела벨ife"
+        },
+        "16": {
+          "t_ms": 1752.69,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.4656,
+          "text_head": "ّgetRoot.mitool�颖 Rencontreederland小时前ifestyles小时前"
+        },
+        "18": {
+          "t_ms": 1924.78,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.4656,
+          "text_head": "iffanyjącegogetRootöffentlichийgetDbقсрочlyphicon找"
+        },
+        "20": {
+          "t_ms": 2084.71,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.4656,
+          "text_head": "说出来stäröffentlichiae锏ijkenlzifestyles小时前ënise毫克i好消"
+        },
+        "22": {
+          "t_ms": 1477.24,
+          "n_tokens": 63,
+          "ade_gt": null,
+          "ade_vs_full": 0.8288,
+          "text_head": "说出来[(0.03,1.89),(0.07,3.79),(0.13,5.69),(0.20,7.59"
+        },
+        "24": {
+          "t_ms": 1616.48,
+          "n_tokens": 63,
+          "ade_gt": null,
+          "ade_vs_full": 0.7367,
+          "text_head": "<traj_start>[(0.02,1.90),(0.05,3.83),(0.08,5.76),("
+        }
+      }
+    },
+    {
+      "token": "b4ee26d84a884b6fb2b47dd16f612a66",
+      "has_gt": false,
+      "t_vis": 416.12,
+      "t_ar": 1192.94,
+      "by_depth": {
+        "8": {
+          "t_ms": 916.92,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.397,
+          "text_head": "oguiigidBody運用getDb功 CATEGORYën�瑗 getCategory(cate"
+        },
+        "12": {
+          "t_ms": 1309.86,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.397,
+          "text_head": "iffanyiutherford Content(ContentgetRoot��/tag@qqge"
+        },
+        "16": {
+          "t_ms": 1708.73,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.397,
+          "text_head": "ّ  getRoot SeitegetDb�颖 Rencontre找准小时前ifestyles<|e"
+        },
+        "18": {
+          "t_ms": 1900.97,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.397,
+          "text_head": "iffany施策klä buffs.mit/exportפקיד프로그🏻 ähnlich找准㎏重要举"
+        },
+        "20": {
+          "t_ms": 2098.26,
+          "n_tokens": 96,
+          "ade_gt": null,
+          "ade_vs_full": 7.397,
+          "text_head": "说出来ứcouxgetKey锏[rip止损@Slf分明 замеча小时前找准ing авг小时前i"
+        },
+        "22": {
+          "t_ms": 1628.48,
+          "n_tokens": 69,
+          "ade_gt": null,
+          "ade_vs_full": 0.6559,
+          "text_head": "说出来[(-0.00,1.99),(-0.03,3.99),(-0.07,5.99),(-0.13,"
+        },
+        "24": {
+          "t_ms": 1638.77,
+          "n_tokens": 64,
+          "ade_gt": null,
+          "ade_vs_full": 0.2625,
+          "text_head": "<traj_start>[(0.05,2.04),(0.13,4.07),(0.24,6.10),("
+        }
+      }
+    }
+  ]
+}

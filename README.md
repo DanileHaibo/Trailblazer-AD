@@ -136,8 +136,10 @@ trajspec/            core library
   nusc_data.py       nuScenes VAD temporal pkl packing
 scripts/             caching, draft training, live eval, baselines
 tests/               accept + baseline unit tests
-results/             paper and reproduction JSONs (weights excluded)
+results/             paper and reproduction JSONs (teacher caches excluded)
+weights/             trained draft heads (3-7 MB each) + loading notes
 repro/               README + paper-vs-repro comparison
+survey/              literature survey of AR driving-VLA acceleration
 ```
 
 ## Draft head diagnostics
@@ -168,3 +170,117 @@ e.g. AutoVLA 3.778 -> 4.854 accept as the box widens 0.50/0.30 -> 1.00/0.60 m.
   usable for accuracy tables.
 - Verify is currently one teacher-force forward over the draft tokens; a
   token-level parallel verify is not implemented.
+
+## Acceleration baselines and where the time actually goes
+
+`survey/ACCEL_SURVEY.md` is the literature survey of acceleration methods for
+AR driving VLAs (Spec-VLA, KERV, PD-VLA, FastDriveVLA, Prune2Drive, FastV,
+DeeAD, Orion-Lite, ...), graded by publication status and by which pipeline
+stage each one attacks. It also holds the single-GPU head-to-head numbers.
+
+`survey/AD_NATIVE_ACCEL.md` narrows this to **autonomous-driving-native** work
+only (six routes: visual-token pruning, CoT compression, non-autoregressive
+decoding, KV reuse, distillation, serving), excluding robotics VLA methods
+(Spec-VLA, KERV, PD-VLA, Zora, SwiftVLA, SQAP-VLA, TRIAGE) which appear there
+only as cross-domain references.
+
+`survey/SKIPLAYER_AND_PRUNING.md` is the deep dive on the two reduce-compute
+families: dynamic depth (early exit vs layer skipping vs MoD vs Router-Tuning vs
+static layer pruning) and token pruning (importance-based vs redundancy-based, and
+why they criticise each other). Both are falsified on this teacher -- see the
+"why everything went to zero" section, which ties back to decode being
+weight-bound rather than KV-length-bound.
+
+Profile of OpenDriveVLA-0.5B + UniAD (`scripts/profile_opendrive_stages.py`,
+L20, n=10, CUDA-synchronized):
+
+| stage | ms | share of E2E |
+|---|---|---|
+| UniAD vision tower | 411.7 | 24.9% |
+| feature projection | 0.5 | 0.03% |
+| prompt assembly | 1.6 | 0.1% |
+| LM prefill (620 tok) | 30.6 | 1.8% |
+| AR decode (66 tok @ 18.6 ms) | 1211.8 | **73.2%** |
+
+Decode dominates; prefill is 1.8%. But the intuitive follow-up -- "so pruning
+visual tokens caps out at 1.8%" -- is **wrong twice over**: the visual tokens are
+also in the KV cache (so they would also tax every decode step), and yet measurement
+shows the real ceiling is **zero**. Decode is weight-bound, not KV-length-bound:
+truncating the prompt from 625 to 200 tokens leaves a decode step unchanged
+(23.39 -> 23.48 ms), and an oracle that deletes *every* visual token still gives
+1.002x E2E (`results/kvlen_scaling_opendrive.json`,
+`results/oracle_prune_opendrive.json`). So FastDriveVLA / Prune2Drive / FastV are
+not merely orthogonal here -- they have no headroom at all on this teacher. Their
+reported 3.7x-6.4x prefill wins come from 3249-token multi-camera ViTs, not from
+148 UniAD query tokens feeding a 0.5B LM.
+
+### The main comparison: 4 families, same frames
+
+`scripts/run_unified_accel_table.py` -> `results/unified_accel_table.json`,
+rendered to `results/tab_unified_accel.tex`.
+
+n=40 (34 GT-valid), one L20, CUDA-synchronized. **The UniAD tower runs once per
+frame and its features are shared by every row**, so only the decode strategy
+differs; E2E includes that shared tower cost.
+
+| method | attacks | E2E ms | speedup | ADE | L2@1s | L2@2s | L2@3s |
+|---|---|---|---|---|---|---|---|
+| AR greedy | --- | 1639 | 1.00x | 0.691 | 0.262 | 0.433 | 0.691 |
+| Spec-VLA (exact) | accept rule | 1700 | **0.96x** | 0.691 | 0.262 | 0.433 | 0.691 |
+| Spec-VLA (pose-relax) | accept rule | 908 | 1.81x | 0.750 | 0.291 | 0.478 | 0.750 |
+| PD-VLA (parallel) | serial dependency | 1289 | 1.27x | **29.235** | 1.887 | 20.637 | 29.235 |
+| Pruning (oracle 25%) | visual tokens | 1639 | **1.00x** | 0.659 | 0.254 | 0.414 | 0.659 |
+| **TrajSpecDec (ours)** | accept + seam | 957 | **1.71x** | **0.692** | 0.274 | 0.441 | 0.692 |
+
+Spec-VLA (exact) reproduces AR greedy's ADE *exactly* (0.691) because every frame is
+a full reject and falls back to the official `generate()`. That is also the check that
+the fallback path is bit-exact: `n_accept == 0` frames now measure
+`ADE(ours, AR) = 0.000000`.
+
+Token-exact SD gives no speedup at all (1.00x). PD-VLA is unusable (29 m ADE,
+0% convergence, 17.5% unparseable). Pruning gives exactly 1.00x -- its lower ADE
+is the output drifting, not an improvement, since its latency is identical to AR.
+
+### Two bugs that invalidated every earlier AR-vs-spec number
+
+Both are fixed; both must stay documented because they silently corrupt results.
+
+**1. The SD verify path was not the same decoder as `generate()`.**
+`generation_config.json` sets `repetition_penalty = 1.1`, which `generate()`
+applies even at `do_sample=False`; the SD path used a bare argmax. Token agreement
+with `generate()` was 0.13 (all 10 frames diverged within 20 tokens), and frames
+with `n_accept == 0` -- which should reproduce the teacher verbatim -- still
+differed by 0.15 m ADE. Fix: `TeacherDecoder` in `trajspec/opendrive_live.py`.
+(This also surfaced that `eos_token_id` is a list, so the old `tid == eos` test was
+never true.)
+
+**2. UniAD's vision tower carries persistent temporal state.**
+`prev_frame_info` (`prev_bev` / `prev_pos` / `scene_token`) and
+`track_base.max_obj_id` survive across forwards. The same frame prefilled twice
+around a `generate()` call differs by 0.65 in logit space; and even with state
+reset, three consecutive tower calls on one frame yield track counts 30/31/30.
+Sampling by index is therefore not reproducible. Fix: run the tower once per frame
+and pass the result to every method via `uniad_pth`, plus `reset_uniad_temporal()`
+as a safety net.
+
+### A third issue, exposed only after the first two were fixed
+
+Splicing from a **single** accepted waypoint is what cost us accuracy: 8 frames with
+`n_accept == 1` carried +0.985 m ADE, because `seam_blend` extrapolates from `d[0]`
+*and* the tail is decoded conditioned on that same wrong prefix. With
+`min_accept=2` (below it we fall back to a full reject, accepting the latency cost)
+overall ADE went **0.929 -> 0.707** against AR's 0.691.
+
+Per-accept-length, after the fix:
+
+| accept /6 | frames | AR ADE | ours ADE | ours E2E ms |
+|---|---|---|---|---|
+| 0 | 2 | 0.604 | 0.694 | 1675 |
+| 1 | 8 | 0.668 | 0.710 | 1680 |
+| 2 | 6 | 0.776 | 0.774 | 1301 |
+| 4 | 1 | 0.762 | 0.737 | 904 |
+| 5 | 1 | 0.306 | 0.422 | 698 |
+| 6 | 16 | 0.701 | 0.698 | **477** |
+
+Latency is bimodal: full-accept frames run at 477 ms, reject-heavy frames fall
+back to AR latency. The 1.75x mean hides that.

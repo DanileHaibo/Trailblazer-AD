@@ -1,0 +1,56 @@
+{
+  "protocol": {
+    "cache": "/home/xinhchen2/hhb/Trailblazer-AD/results/cache_opendrive_nusc_val.pt",
+    "split": "hash holdout 15% seed=17; RAG retrieval pool = the other 85%",
+    "accept": {
+      "lon_m": 0.5,
+      "lat_m": 0.3
+    },
+    "rag_k": 1,
+    "note": "All three drafters share one accept rule and one seam-repair tail, so the only difference is the draft distribution. decode_steps = 1 verify + remaining serial waypoints; decode_speedup is step accounting, not wall clock."
+  },
+  "results": {
+    "bicycle": {
+      "drafter": "bicycle",
+      "n": 903,
+      "mean_n_accept": 2.833,
+      "frac_accept_ge2": 0.691,
+      "frac_full6": 0.219,
+      "frac_zero": 0.094,
+      "decode_steps": 3.386,
+      "decode_speedup": 1.772,
+      "ade_vs_teacher": 0.2438,
+      "spec_ade": 1.9436,
+      "teacher_ade": 1.8724,
+      "n_with_gt": 651
+    },
+    "rag(k=1)": {
+      "drafter": "rag(k=1)",
+      "n": 903,
+      "mean_n_accept": 0.548,
+      "frac_accept_ge2": 0.121,
+      "frac_full6": 0.027,
+      "frac_zero": 0.762,
+      "decode_steps": 5.478,
+      "decode_speedup": 1.095,
+      "ade_vs_teacher": 0.0871,
+      "spec_ade": 1.9146,
+      "teacher_ade": 1.8724,
+      "n_with_gt": 651
+    },
+    "neural": {
+      "drafter": "neural",
+      "n": 903,
+      "mean_n_accept": 4.009,
+      "frac_accept_ge2": 0.852,
+      "frac_full6": 0.388,
+      "frac_zero": 0.101,
+      "decode_steps": 2.379,
+      "decode_speedup": 2.522,
+      "ade_vs_teacher": 0.1667,
+      "spec_ade": 1.8742,
+      "teacher_ade": 1.8724,
+      "n_with_gt": 651
+    }
+  }
+}

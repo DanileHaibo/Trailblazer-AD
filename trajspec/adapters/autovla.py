@@ -304,14 +304,23 @@ class AutoVLARuntime:
         speed: torch.Tensor,
         horizon: int | None = None,
         skip_think: bool = False,
+        draft_k: int | None = None,
     ) -> dict:
-        """Prefill → draft MLP → one teacher-force verify. No accept / tail yet."""
+        """Prefill → draft MLP → one teacher-force verify. No accept / tail yet.
+
+        draft_k: only the first `draft_k` waypoints are speculated; the rest of
+        the horizon is taken from the teacher. PDMS scores 4 s (8 of 10 points
+        here) and acceptance collapses on the tail, so drafting fewer points
+        raises the accept rate and shrinks the serial tail without hurting the
+        scored horizon.
+        """
         import time
 
         from trajspec.action_quant import action_ids_to_xy, xy_to_action_ids
         from trajspec.live_spec import verify_ids_from_logits
 
         horizon = int(horizon or self.horizon)
+        draft_k = int(draft_k or horizon)
 
         def _ms(fn):
             if torch.cuda.is_available():
@@ -341,7 +350,7 @@ class AutoVLARuntime:
         speed_b = speed.to(device=self.device, dtype=torch.float32).view(-1)
 
         def _draft():
-            return draft_head(hidden, extra=extra_b, speed=speed_b)[0, :horizon]
+            return draft_head(hidden, extra=extra_b, speed=speed_b)[0, :draft_k]
 
         t_draft, draft = _ms(_draft)
         draft_xy = draft.float().cpu()
@@ -368,12 +377,13 @@ class AutoVLARuntime:
             think_logits, force_logits, draft_ids, self.action_start_id, self.n_action_bins
         )
         teacher_xy = action_ids_to_xy(teacher_ids, cb)
-        if teacher_xy.shape[0] < horizon:
-            pad_n = horizon - int(teacher_xy.shape[0])
+        if teacher_xy.shape[0] < draft_k:
+            pad_n = draft_k - int(teacher_xy.shape[0])
             last = teacher_xy[-1:] if teacher_xy.shape[0] else torch.zeros(1, 2)
             teacher_xy = torch.cat([teacher_xy, last.repeat(pad_n, 1)], dim=0)
         return {
             "horizon": horizon,
+            "draft_k": draft_k,
             "cb": cb,
             "draft_xy": draft_xy,
             "draft_ids": draft_ids,
@@ -398,14 +408,17 @@ class AutoVLARuntime:
         from trajspec.sd_baselines import KERV_LITE, commit_spec, n_accept_autovla
 
         horizon = int(pack["horizon"])
+        draft_k = int(pack.get("draft_k", horizon))
         draft_xy = pack["draft_xy"]
         draft_ids = pack["draft_ids"]
         teacher_ids = pack["teacher_ids"]
         teacher_xy = pack["teacher_xy"]
+        # Acceptance is only judged over the speculated prefix; points past
+        # draft_k come straight from the teacher and cannot be "accepted".
         n_acc = n_accept_autovla(
             accept_mode,
-            draft_xy[:horizon],
-            teacher_xy[:horizon],
+            draft_xy[:draft_k],
+            teacher_xy[:draft_k],
             draft_ids,
             teacher_ids,
             accept_cfg,
@@ -507,6 +520,7 @@ class AutoVLARuntime:
         skip_think: bool = False,
         accept_mode: str = "geometric",
         id_radius: int = 16,
+        draft_k: int | None = None,
     ):
         """Prefill → draft MLP → one teacher-force verify → serial action tail.
 
@@ -515,7 +529,7 @@ class AutoVLARuntime:
 
         Returns (xy [H,2], info dict with real CUDA-sync timings).
         """
-        pack = self.spec_propose(features, draft_head, extra, speed, horizon=horizon, skip_think=skip_think)
+        pack = self.spec_propose(features, draft_head, extra, speed, horizon=horizon, skip_think=skip_think, draft_k=draft_k)
         return self.spec_commit(pack, accept_cfg, accept_mode=accept_mode, id_radius=id_radius)
 
     @torch.inference_mode()

@@ -5,11 +5,16 @@ __pycache__/
 .pytest_cache/
 
 # Model weights / teacher caches (multi-GB, regenerate with the scripts below)
+# Draft heads under weights/ are small (3-7 MB each) and ARE tracked - see the
+# `!weights/*.pt` exception below.
 *.pt
 *.pkl
 *.ckpt
 *.safetensors
 *.bin
+
+# Draft heads we ship (small, trained by us)
+!weights/*.pt
 
 # Logs
 *.log

@@ -1,0 +1,96 @@
+{
+  "model": "OpenDriveVLA-0.5B+UniAD",
+  "device": "NVIDIA L20",
+  "n": 3,
+  "start_index": 1500,
+  "results": {
+    "fp32": {
+      "n": 3,
+      "t_e2e_ms": 1571.14,
+      "t_decode_ms": 1118.71,
+      "n_tokens": 62.3,
+      "ade_gt": null,
+      "speedup_e2e": 1.0,
+      "identical_answer_rate_vs_fp32": 1.0,
+      "rows": [
+        {
+          "token": "77a603db4aa247329c0a1aae2a46d18f",
+          "t_vis_ms": 427.95,
+          "t_prefill_ms": 31.99,
+          "t_decode_ms": 1121.57,
+          "t_e2e_ms": 1581.51,
+          "n_tokens": 63,
+          "ade_gt": null,
+          "has_gt": false,
+          "text_head": "<traj_start>[(0.02,2.29),(0.03,4.42),(0.03,6.35),(0.03,8.00)"
+        },
+        {
+          "token": "e333147a745b4edb91c01a0c06309f9f",
+          "t_vis_ms": 417.93,
+          "t_prefill_ms": 32.11,
+          "t_decode_ms": 1103.1,
+          "t_e2e_ms": 1553.14,
+          "n_tokens": 62,
+          "ade_gt": null,
+          "has_gt": false,
+          "text_head": "<traj_start>[(0.02,2.05),(0.04,3.93),(0.06,5.65),(0.08,7.20)"
+        },
+        {
+          "token": "e884c9e0f2414843a89451f7ce015f49",
+          "t_vis_ms": 415.31,
+          "t_prefill_ms": 31.99,
+          "t_decode_ms": 1131.46,
+          "t_e2e_ms": 1578.77,
+          "n_tokens": 62,
+          "ade_gt": null,
+          "has_gt": false,
+          "text_head": "<traj_start>[(0.01,1.84),(0.02,3.55),(0.03,5.08),(0.04,6.42)"
+        }
+      ]
+    },
+    "bf16": {
+      "n": 3,
+      "t_e2e_ms": 1454.62,
+      "t_decode_ms": 1014.64,
+      "n_tokens": 62.3,
+      "ade_gt": null,
+      "speedup_e2e": 1.08,
+      "identical_answer_rate_vs_fp32": 0.0,
+      "rows": [
+        {
+          "token": "77a603db4aa247329c0a1aae2a46d18f",
+          "t_vis_ms": 416.02,
+          "t_prefill_ms": 21.11,
+          "t_decode_ms": 1031.16,
+          "t_e2e_ms": 1468.29,
+          "n_tokens": 63,
+          "ade_gt": null,
+          "has_gt": false,
+          "text_head": "<traj_start>[(0.02,2.29),(0.03,4.38),(0.03,6.28),(0.03,7.98)"
+        },
+        {
+          "token": "e333147a745b4edb91c01a0c06309f9f",
+          "t_vis_ms": 422.31,
+          "t_prefill_ms": 21.7,
+          "t_decode_ms": 1009.26,
+          "t_e2e_ms": 1453.27,
+          "n_tokens": 62,
+          "ade_gt": null,
+          "has_gt": false,
+          "text_head": "<traj_start>[(0.02,2.04),(0.04,3.92),(0.06,5.65),(0.08,7.20)"
+        },
+        {
+          "token": "e884c9e0f2414843a89451f7ce015f49",
+          "t_vis_ms": 417.57,
+          "t_prefill_ms": 21.23,
+          "t_decode_ms": 1003.5,
+          "t_e2e_ms": 1442.3,
+          "n_tokens": 62,
+          "ade_gt": null,
+          "has_gt": false,
+          "text_head": "<traj_start>[(0.01,1.84),(0.02,3.55),(0.03,5.07),(0.04,6.34)"
+        }
+      ]
+    }
+  }
+}

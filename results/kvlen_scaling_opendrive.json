@@ -1,0 +1,63 @@
+{
+  "model": "OpenDriveVLA-0.5B+UniAD",
+  "device": "NVIDIA L20",
+  "n": 3,
+  "start_index": 1500,
+  "sweep": [
+    {
+      "prompt_len": 638,
+      "t_prefill_ms": 33.06,
+      "t_step_ms": 23.21
+    },
+    {
+      "prompt_len": 629,
+      "t_prefill_ms": 34.64,
+      "t_step_ms": 23.23
+    },
+    {
+      "prompt_len": 625,
+      "t_prefill_ms": 33.62,
+      "t_step_ms": 23.39
+    },
+    {
+      "prompt_len": 540,
+      "t_prefill_ms": 32.92,
+      "t_step_ms": 23.82
+    },
+    {
+      "prompt_len": 500,
+      "t_prefill_ms": 32.31,
+      "t_step_ms": 23.69
+    },
+    {
+      "prompt_len": 460,
+      "t_prefill_ms": 32.04,
+      "t_step_ms": 23.807
+    },
+    {
+      "prompt_len": 420,
+      "t_prefill_ms": 31.59,
+      "t_step_ms": 23.723
+    },
+    {
+      "prompt_len": 380,
+      "t_prefill_ms": 31.29,
+      "t_step_ms": 23.663
+    },
+    {
+      "prompt_len": 300,
+      "t_prefill_ms": 30.96,
+      "t_step_ms": 23.633
+    },
+    {
+      "prompt_len": 200,
+      "t_prefill_ms": 29.86,
+      "t_step_ms": 23.477
+    }
+  ],
+  "fit_step_ms": {
+    "slope_ms_per_prompt_token": -0.00064,
+    "intercept_ms": 23.8647
+  },
+  "note": "Truncating the prompt tail. Used to price one KV-cache token at decode time, which is what visual-token pruning actually saves."
+}

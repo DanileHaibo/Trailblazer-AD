@@ -1,0 +1,45 @@
+{
+  "model": "OpenDriveVLA-0.5B+UniAD",
+  "mode": "oracle_visual_token_slice",
+  "device": "NVIDIA L20",
+  "n": 6,
+  "start_index": 1500,
+  "table": [
+    {
+      "frac": 1.0,
+      "n_vis_tokens": 148,
+      "t_generate_ms": 1594.37,
+      "answer_unchanged_rate": 1.0,
+      "speedup_vs_full": 1.0
+    },
+    {
+      "frac": 0.5,
+      "n_vis_tokens": 74,
+      "t_generate_ms": 1613.23,
+      "answer_unchanged_rate": 0.0,
+      "speedup_vs_full": 0.988
+    },
+    {
+      "frac": 0.25,
+      "n_vis_tokens": 36,
+      "t_generate_ms": 1599.34,
+      "answer_unchanged_rate": 0.0,
+      "speedup_vs_full": 0.997
+    },
+    {
+      "frac": 0.125,
+      "n_vis_tokens": 18,
+      "t_generate_ms": 1607.67,
+      "answer_unchanged_rate": 0.0,
+      "speedup_vs_full": 0.992
+    },
+    {
+      "frac": 0.0,
+      "n_vis_tokens": 0,
+      "t_generate_ms": 1590.66,
+      "answer_unchanged_rate": 0.0,
+      "speedup_vs_full": 1.002
+    }
+  ],
+  "note": "No pruner, no quality guarantee: features are simply truncated, so this is an UPPER BOUND on any visual-token pruning method. answer_unchanged_rate compares the decoded string to the unpruned one on the same frame."
+}

@@ -84,6 +84,9 @@ def main():
     p.add_argument("--start", type=int, default=1500)
     p.add_argument("--out", default=str(ROOT / "results/live_sd_baselines_opendrive.json"))
     args = p.parse_args()
+    # We chdir into the OpenDriveVLA repo, so a relative --out would resolve there.
+    if not os.path.isabs(args.out):
+        args.out = str(ROOT / args.out)
 
     disable_torch_init()
     device = torch.device("cuda:0")

@@ -6,15 +6,12 @@ from the last contour's front/rear corners.
 """
 from __future__ import annotations
 
-import os
 import pickle
 from pathlib import Path
 
 import torch
 
-DEFAULT_CODEBOOK = Path(
-    os.environ.get("TRAJSPEC_AUTOVLA_CODEBOOK", "/home/xinhchen2/hhb/AutoVLA/codebook_cache/agent_vocab.pkl")
-)
+DEFAULT_CODEBOOK = Path("/home/xinhchen2/hhb/AutoVLA/codebook_cache/agent_vocab.pkl")
 
 
 def load_codebook(path: str | Path = DEFAULT_CODEBOOK) -> torch.Tensor:
@@ -66,15 +63,26 @@ def xy_to_action_ids(
 
 
 def action_ids_to_xy(ids: list[int], codebook: torch.Tensor) -> torch.Tensor:
-    """Roll ids from origin; drop the t=0 pose like AutoVLA decode."""
+    """Roll ids from origin; drop the t=0 pose like AutoVLA decode.
+
+    Only the selected token per step is transformed, not the whole codebook:
+    the previous version rotated all 2048 entries at every step (~6.8 ms per
+    10-waypoint path), which dominated the speculative-decoding bookkeeping.
+    """
     cb = codebook.float()
+    if not len(ids):
+        return cb.new_zeros(0, 2)
+    sel = cb[torch.as_tensor(list(ids), dtype=torch.long, device=cb.device)]  # [K,6,4,2]
     pos = cb.new_zeros(2)
     head = cb.new_zeros(())
-    pts = [pos.clone()]
-    for i in ids:
-        pos_next, head_next = one_step_all(cb, pos, head)
-        pos = pos_next[int(i)]
-        head = head_next[int(i)]
+    pts = []
+    for k in range(sel.shape[0]):
+        local = sel[k].reshape(-1, 2)  # [24,2]
+        c, s = torch.cos(head), torch.sin(head)
+        glob = torch.stack([c * local[:, 0] - s * local[:, 1], s * local[:, 0] + c * local[:, 1]], -1) + pos
+        last = glob.view(6, 4, 2)[-1]
+        pos = last.mean(dim=0)
+        diff = last[0] - last[3]
+        head = torch.atan2(diff[1], diff[0])
         pts.append(pos.clone())
-    traj = torch.stack(pts, dim=0)
-    return traj[1:, :2] if traj.shape[0] > 1 else traj.new_zeros(0, 2)
+    return torch.stack(pts, dim=0)[:, :2]

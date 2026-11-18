@@ -1,0 +1,24 @@
+{
+  "device": "NVIDIA L20",
+  "prompt_len": 620,
+  "results": {
+    "eager_fp32": {
+      "one_token_ms": 16.677,
+      "prefill_ms": 26.411
+    },
+    "bf16_stack": {
+      "one_token_ms": 14.759,
+      "prefill_ms": 16.146
+    },
+    "compiled_bf16": {
+      "one_token_ms": 1.676,
+      "prefill_ms": 8.945
+    },
+    "static_cache_eager_bf16": {
+      "one_token_ms": 19.61
+    },
+    "cuda_graph_bf16": {
+      "error": "RuntimeError: CUDA error: operation failed due to a previous error during capture\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side as"
+    }
+  }
+}
