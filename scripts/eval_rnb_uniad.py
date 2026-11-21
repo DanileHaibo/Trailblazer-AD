@@ -12,10 +12,12 @@ import numpy as np
 import torch
 
 ROOT = Path(__file__).resolve().parents[1]
-OD = Path("/home/xinhchen2/hhb/OpenDriveVLA/drivevla")
-AD = Path("/tmp/RnB-EnCoRe/Agent-Driver")
+OD = Path(os.environ.get("TRAJSPEC_OPENDRIVE_REPO", "/home/xinhchen2/hhb/OpenDriveVLA")) / "drivevla"
+AD = Path(os.environ.get("TRAJSPEC_AGENTDRIVER_REPO", "/tmp/RnB-EnCoRe/Agent-Driver"))
 GT = OD / "eval_share/gt"
-CACHE = ROOT / "results/cache_rnb_nusc_val.pt"
+CACHE = Path(
+    os.environ.get("TRAJSPEC_RNB_CACHE", str(ROOT / "results/cache_rnb_nusc_val.pt"))
+)
 OUT_PKL = ROOT / "results/rnb_teacher_uniad_pred.pkl"
 OUT_JSON = ROOT / "results/rnb_uniad_eval.json"
 

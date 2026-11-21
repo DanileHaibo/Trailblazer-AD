@@ -1,17 +1,19 @@
-# Portable OpenDrive + RnB setup
+# Portable OpenDrive + R&B setup
 
-Branch for running Trailblazer speculative decoding with **OpenDriveVLA-0.5B** and
-**RnB / stanfordasl nuscenes-waypoints-model** on another machine.
+This repo carries two AR textual-waypoint teachers:
 
-## What is in this branch
+- **OpenDriveVLA-0.5B + UniAD** — `[(x,y),...]` text, 6 pts / 3 s
+- **R&B-EnCoRe (Qwen3-VL-4B)** — `[(x,y),...]` text, 6 pts / 3 s
+
+## What is in the repo
 
 | Item | Path | Size |
 |---|---|---|
 | OpenDrive draft head | `weights/draft_opendrive_nusc.pt` | ~3 MB |
-| RnB draft head | `weights/draft_waypoints_nusc.pt` | ~7 MB |
+| R&B draft head | `weights/draft_waypoints_nusc.pt` | ~7 MB |
 | OpenDrive live | `scripts/run_live_specdec_opendrive.py` | |
-| RnB live | `scripts/run_live_specdec_rnb.py` | |
-| RnB shard merge | `scripts/merge_live_rnb_shards.py` | |
+| R&B live | `scripts/run_live_specdec_rnb.py` | |
+| R&B shard merge | `scripts/merge_live_rnb_shards.py` | |
 | Teacher download | `scripts/download_teacher_weights.sh` | |
 
 Teacher HF weights (~1.4 GB + ~9 GB) are **not** committed (GitHub LFS quota).
@@ -24,29 +26,32 @@ git clone -b portable-opendrive-rnb <this-repo-url> Trailblazer-AD
 cd Trailblazer-AD
 
 # 1) teacher weights (~10 GB)
-pip install -U huggingface_hub
-# OpenDriveVLA is gated: accept terms + `huggingface-cli login`
+pip install -U 'huggingface_hub[cli]'
+# OpenDriveVLA is gated: accept terms + `hf auth login`
 bash scripts/download_teacher_weights.sh
 
-# 2) OpenDriveVLA source (needed for UniAD+LLaVA stack)
+# 2) OpenDriveVLA source (needed for the UniAD+LLaVA stack)
 git clone https://github.com/DriveVLA/OpenDriveVLA.git /path/to/OpenDriveVLA
 # follow OpenDriveVLA install (mmcv / mmdet3d / their conda env)
 
 # 3) env
 export TRAJSPEC_OPENDRIVE_CKPT=$PWD/teachers/OpenDriveVLA-0.5B
-export TRAJSPEC_RNB_CKPT=$PWD/teachers/nuscenes-waypoints-model
 export TRAJSPEC_OPENDRIVE_REPO=/path/to/OpenDriveVLA
-export TRAJSPEC_NUSC_ROOT=/path/to/nuscenes   # full nuScenes with val pkl layout
+export TRAJSPEC_RNB_CKPT=$PWD/teachers/nuscenes-waypoints-model
+export TRAJSPEC_NUSC_ROOT=/path/to/nuscenes   # full nuScenes, VAD temporal pkls
+# optional, only if the R&B teacher cache lives elsewhere:
+# export TRAJSPEC_RNB_CACHE=/path/to/cache_rnb_nusc_val.pt
+# export TRAJSPEC_RNB_DRAFT=/path/to/specdec_rnb_full_retrain.pt
 
 # 4) smoke
-# OpenDrive (needs OpenDrive env + UniAD data wiring)
+# OpenDrive (needs the OpenDrive env + UniAD data wiring)
 python scripts/run_live_specdec_opendrive.py --n 4 --warmup 1 --out results/smoke_od.json
 
-# RnB (Qwen3-VL env; transformers with Qwen3-VL support)
+# R&B (Qwen3-VL env; transformers >= 5)
 python scripts/run_live_specdec_rnb.py --n 4 --warmup 1 --out results/smoke_rnb.json
 ```
 
-## Dual-GPU full RnB val (6019)
+## Dual-GPU full R&B val (6019)
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python scripts/run_live_specdec_rnb.py \
@@ -65,4 +70,5 @@ python scripts/merge_live_rnb_shards.py \
 
 - Spec L2 matches official generate by design (verify + greedy tail).
 - Default accept: lon 0.5 m / lat 0.3 m.
-- `TRAJSPEC_*` env vars override hard-coded `/data2/...` defaults used on the original box.
+- All `TRAJSPEC_*` env vars override the `/data2/...` and `/home/...` defaults
+  used on the original box.

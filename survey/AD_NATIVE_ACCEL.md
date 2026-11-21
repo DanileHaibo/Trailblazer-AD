@@ -84,20 +84,18 @@ AD 原生，因为驾驶 VLA 越来越多先出一段推理。
 
 | 工作 | 发表 | AD 平台 | 做法 | 报告收益 |
 |---|---|---|---|---|
-| **AutoVLA（adaptive reasoning + GRPO RFT）** | **NeurIPS 2025** | NAVSIM / nuPlan / nuScenes / Waymo / CARLA | 双思考模式：fast（只出轨迹）/ slow（带 CoT）；GRPO 的奖励含 **CoT 长度惩罚**，简单场景自动走 fast | NAVSIM 500 场景平均耗时 **3.95 s → 1.31 s（−66.8%）**，同时 PDMS 80.54 → 89.11 |
 | **Reasoning-aware Speculative Decoding** | 预印本 2026 | Alpamayo-R1 | 双路 reasoner：routine（只看轨迹历史，**FlatRoPE** 1D 位置编码把注意力从视觉引开）+ deliberative（原 VLA 看视觉）；AARL 做 RL 后训练 | 推理段耗时 **~4×**；block=16 且 L=4.6 时理论上 3.5×，routine 路承担 78% CoC token |
 | **DeeAD** | 预印本 2025 | ORION + Bench2Drive | 训练-free 早退：中间轨迹与轻量先验（导航 / 低精度规划）偏差 ≤δ 就退出；多跳控制器按分数变化率跳层 | δ=2.0 m 时跳 **28% 层**，381 → 270 ms（**−29%**），L2 0.67 → 1.13 m（碰撞率持平） |
 | **ETA-VLA** | 预印本 2026 | 驾驶 | 时序融合 + LLM 内部稀疏化（ILSA） | −61% FLOPs |
 
-**关键观察**：AutoVLA 是**我们的另一个 teacher**。它那条
-"3.95 s → 1.31 s" 正是通过训练改行为（RFT 抑制冗余 CoT）拿到的，
-不是推理期加速。这解释了为什么我们在它身上做 SD 时，
-`think` 段（~890 ms，占 E2E 60%）是最大的未攻克开销 —— 
-**它不是解码问题，是模型要不要想的问题**。
+**关键观察**：CoT 压缩那条线（自适应推理 + RL 惩罚 CoT 长度）是**训练期**
+改行为，不是推理期加速。我们选的两个 teacher 都是 trajectory-only：
+OpenDriveVLA 论文明确说用蒸馏内化推理以避免 CoT 开销，R&B 的
+traj-only 变体也没有 reasoning block。所以：
 
-**与我们的关系**：这是我们最大的空白。
-OpenDriveVLA 不产 CoT（论文明确说用蒸馏内化推理以避免 CoT 开销），
-所以 Reasoning-aware SD 直接不可用；但它对 AutoVLA 适用。
+- 不存在「跳过 CoT」这类可挖开销，整条 E2E 就是 prefill + 解码；
+- 反过来这也让 SD 的收益更干净：省下的串行步数直接体现在墙钟上，
+  不需要先把 think 段拿掉。
 
 ---
 
@@ -175,7 +173,7 @@ Fast-dDrive 的 Scaffold 思想对我们有直接借鉴价值：
 | 路线 | 代表工作 | 攻击的阶段 | 报告收益 | **在我们这里的实测/预估** |
 |---|---|---|---|---|
 | A 剪枝 | FastDriveVLA (AAAI'26), Prune2Drive (CVPR'26) | prefill | 3.7×–6.4× prefill | **1.002×（oracle 全删实测，零收益）** |
-| B CoT 压缩 | AutoVLA RFT (NeurIPS'25), Reasoning-aware SD | reasoning | −67% / 4× | **OpenDriveVLA 无 CoT，不可用**；对 AutoVLA 是最大机会 |
+| B CoT 压缩 | Reasoning-aware SD, adaptive reasoning + RL | reasoning | −67% / 4× | **两个 teacher 都无 CoT，不适用** |
 | C 非自回归 | Fast-dDrive, FlashDrive, DriveVLA-W0 | 串行依赖 | 4.1×–4.7× | 需换 backbone；**但 Scaffold 技巧可直接搬** |
 | D KV 复用 | FlashDrive, Fast-dDrive | 跨帧重复 prefill | 含在 C 内 | 需连续 scene 评测，当前协议测不出 |
 | E 蒸馏 | Orion-Lite (CVPR'26 W) | 整模型 | 3×（整体） | 是替代而非叠加 |
@@ -188,8 +186,8 @@ Fast-dDrive 的 Scaffold 思想对我们有直接借鉴价值：
 1. **只有路线 C 的局部技巧（Scaffold）、和推理期 SD 类**能真正起作用；
 2. 路线 A 在 AD 领域最热，但在我们这个模型形态上**零收益**，
    这是可以写进论文的负面结果（oracle 实验已做）；
-3. 路线 B 是**我们最大的未覆盖方向**：AutoVLA 的 60% E2E 花在 CoT 上，
-   而我们目前完全没动它；
+3. 路线 B 在 trajectory-only teacher 上不适用：没有 CoT 可压，
+   省下的串行步数只能靠推理期 SD 拿到；
 4. 路线 E/F 是不同赛道，不该混进同一张对比表。
 
 ---
@@ -204,7 +202,6 @@ Fast-dDrive 的 Scaffold 思想对我们有直接借鉴价值：
 | Prune2Drive | CVPR 2026 |
 | DriveMoE | CVPR 2026 |
 | ORION | ICCV 2025 |
-| AutoVLA | NeurIPS 2025 |
 | DriveVLA-W0 | ICLR 2026 |
 | Orion-Lite | CVPR 2026 Workshop |
 | OpenDriveVLA（我们的 teacher） | AAAI 2026 |
@@ -227,7 +224,6 @@ Fast-dDrive 的 Scaffold 思想对我们有直接借鉴价值：
 | 方法 | 关系 | 建议写法 |
 |---|---|---|
 | FastDriveVLA / Prune2Drive | **正交但无收益** | 报告 oracle 上界实验（1.002×），说明不是我们没测，是这条路线在此 teacher 上无空间 |
-| AutoVLA RFT | **同族不同层** | 它改训练（要不要想），我们改推理（怎么少解码）。可作为 future work 的接口 |
 | Fast-dDrive Scaffold | **可直接吸收** | 我们的 `<traj_start>`/`[(`/`]` 是天然 scaffold，可作为 accepting rule 的一个扩展 |
 | DriveVLA-W0 / Orion-Lite | **替代路线** | 明确说明它们是换模型，不是推理期加速，不构成同表对比 |
 | FlashDrive / Fast-dDrive 系统部分 | **不同评测条件** | 它们报的是 H100 + SGLang + FP8，我们是 L20 + PyTorch eager，不可直接比绝对值 |

@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 from trajspec.accept import AcceptConfig, longest_prefix_accept
-from trajspec.b2d_data import l2_horizon
+from trajspec.metrics import l2_horizon
 from trajspec.draft_head import DraftHead
 from trajspec.eval_loop import l2_uniad_at, mean_dict, spec_from_draft
 from trajspec.nusc_data import extras_for_tokens

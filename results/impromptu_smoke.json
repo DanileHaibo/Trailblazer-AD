@@ -1,0 +1,9 @@
+{
+  "model": "aaaaaap/ImpromptuVLAModel/3B_AD",
+  "path": "/data2/hf_overlap_models/ImpromptuVLA-3B-AD/3B_AD",
+  "hidden_size": 2048,
+  "smoke": "OK",
+  "output_prefix": "<PLANNING>Predicted future movement details...",
+  "format": "textual [x,y] waypoints, traj-only planning tag",
+  "note": "full cache+draft train not yet run; OpenDrive-like profile confirmed"
+}

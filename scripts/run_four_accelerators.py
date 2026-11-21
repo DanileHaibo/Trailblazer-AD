@@ -58,7 +58,7 @@ from trajspec.ad_accel import (
     fastv_prune_features,
     scaffold_accept_waypoints,
 )
-from trajspec.b2d_data import l2_horizon
+from trajspec.metrics import l2_horizon
 from trajspec.draft_head import DraftHead, pack_extra, pack_speed
 from trajspec.nusc_data import VAL_PKL, load_infos, pack_kinematics, token_index
 from trajspec.opendrive_live import (

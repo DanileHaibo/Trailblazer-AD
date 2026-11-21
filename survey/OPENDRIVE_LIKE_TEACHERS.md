@@ -1,9 +1,9 @@
 # OpenDrive-like teachers for Trailblazer
 
-AutoVLA stalls around ~1.15–1.26× E2E because each waypoint is **1 fast action
-token** and fixed cost (vision+prefill) dominates. OpenDriveVLA hits **1.6×+**
-because each waypoint is **~11 text tokens**, decode is long, and full-accept
-frames collapse ~1.6 s → ~0.5 s.
+Textual-waypoint teachers reach **1.6×–3.4×** E2E because each waypoint is
+**~11 text tokens**: decode is long, so full-accept frames collapse
+~2.3 s → ~0.1 s. A teacher whose whole trajectory fits in one short token per
+waypoint has almost no serial decode to skip and stalls near 1.1–1.3×.
 
 ## Selection rule
 
@@ -21,9 +21,8 @@ A teacher fits this stack if and only if:
 | **OpenDriveVLA-0.5B** | paper teacher | text `[(x,y)]` ×6 | **1.65×** (n=12) |
 | **stanfordasl/nuscenes-waypoints-model** (RnB traj-only, Qwen3-VL-4B) | draft retrained on 6019 | text `[(x,y)]` ×6 | **3.37×** (n=40) |
 | **Impromptu-VLA 3B_AD** (`aaaaaap/ImpromptuVLAModel/3B_AD`) | weights on disk, smoke OK | `<PLANNING>…[x,y]…` | pending cache+train |
-| stanfordasl/nuscenes-rnbencore-reasoning-waypoints | skip for now | CoT + waypoints | expected AutoVLA-like |
-| Curious-VLA | skip | long explanation CoT | expected AutoVLA-like |
-| AutoVLA traj-only | already integrated | 1 action token / pt | ~1.15× |
+| stanfordasl/nuscenes-rnbencore-reasoning-waypoints | skip for now | CoT + waypoints | low (CoT dominates) |
+| Curious-VLA | skip | long explanation CoT | low (CoT dominates) |
 | UniDriveVLA / Qwen-Drive planner | N/A | flow / non-AR | no serial decode to skip |
 
 ## Waypoints / RnB result (this round)

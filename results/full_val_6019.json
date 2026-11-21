@@ -1,62 +1,4 @@
 {
-  "autovla": {
-    "name": "AutoVLA-3B",
-    "n": 6019,
-    "n_with_gt": 5094,
-    "mean_n_accept": 3.798,
-    "decode_speedup": 3.335,
-    "frac_accept_ge2": 0.979,
-    "frac_accept_ge4": 0.511,
-    "frac_accept_6": 0.176,
-    "accept_dist": {
-      "0": 0.001,
-      "1": 0.02,
-      "2": 0.151,
-      "3": 0.318,
-      "4": 0.205,
-      "5": 0.13,
-      "6": 0.176
-    },
-    "teacher": {
-      "stp3": {
-        "l2_1s": 0.4023,
-        "l2_2s": 0.9106,
-        "l2_3s": 1.6191,
-        "ade": 1.6191
-      },
-      "uniad": {
-        "l2_at_1s": 0.5734,
-        "l2_at_2s": 1.7528,
-        "l2_at_3s": 3.5071
-      }
-    },
-    "spec_hard": {
-      "stp3": {
-        "l2_1s": 0.4045,
-        "l2_2s": 0.9095,
-        "l2_3s": 1.6174,
-        "ade": 1.6174
-      },
-      "uniad": {
-        "l2_at_1s": 0.5768,
-        "l2_at_2s": 1.7469,
-        "l2_at_3s": 3.5052
-      }
-    },
-    "spec_blend": {
-      "stp3": {
-        "l2_1s": 0.4039,
-        "l2_2s": 0.9006,
-        "l2_3s": 1.6037,
-        "ade": 1.6037
-      },
-      "uniad": {
-        "l2_at_1s": 0.5756,
-        "l2_at_2s": 1.7206,
-        "l2_at_3s": 3.5052
-      }
-    }
-  },
   "opendrive": {
     "name": "OpenDriveVLA-0.5B",
     "n": 6019,
@@ -114,5 +56,86 @@
         "l2_at_3s": 3.4127
       }
     }
+  },
+  "rnb": {
+    "name": "R&B-EnCoRe-4B (stanfordasl/nuscenes-waypoints-model)",
+    "n": 6015,
+    "mean_n_accept": 4.144,
+    "accept_dist": {
+      "0": 0.113,
+      "1": 0.085,
+      "2": 0.089,
+      "3": 0.077,
+      "4": 0.059,
+      "5": 0.044,
+      "6": 0.532
+    },
+    "frac_accept_6": 0.532,
+    "speedup_vs_official_generate": 2.725,
+    "measured_ms": {
+      "official_generate": {
+        "mean": 2348.8,
+        "p50": 2359.35,
+        "p90": 2417.41
+      },
+      "spec_e2e": {
+        "mean": 861.94,
+        "p50": 118.54,
+        "p90": 2331.51
+      },
+      "prefill": {
+        "mean": 74.16,
+        "p50": 73.55,
+        "p90": 74.07
+      },
+      "verify": {
+        "mean": 42.67,
+        "p50": 42.43,
+        "p90": 43.17
+      },
+      "tail": {
+        "mean": 744.03,
+        "p50": 0.0,
+        "p90": 2214.0
+      },
+      "draft": {
+        "mean": 1.08,
+        "p50": 1.07,
+        "p90": 1.13
+      }
+    },
+    "teacher": {
+      "stp3": {
+        "l2_1s": 0.3163,
+        "l2_2s": 0.7489,
+        "l2_3s": 1.4114,
+        "ade": 1.4114
+      }
+    },
+    "spec_hard": {
+      "stp3": {
+        "l2_1s": 0.3051,
+        "l2_2s": 0.7252,
+        "l2_3s": 1.3845,
+        "ade": 1.3845
+      }
+    },
+    "spec_blend": {
+      "stp3": {
+        "l2_1s": 0.3051,
+        "l2_2s": 0.7252,
+        "l2_3s": 1.3845,
+        "ade": 1.3845
+      }
+    },
+    "draft": {
+      "stp3": {
+        "l2_1s": 0.2986,
+        "l2_2s": 0.7228,
+        "l2_3s": 1.3705,
+        "ade": 1.3705
+      }
+    },
+    "source": "results/live_waypoints_rnb_full_6019.json + results/specdec_waypoints_rnb_retrain.json"
   }
 }

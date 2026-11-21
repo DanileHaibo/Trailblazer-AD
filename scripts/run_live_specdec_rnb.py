@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 
 from trajspec.accept import AcceptConfig
 from trajspec.adapters.rnb_waypoints import RnbWaypointsRuntime
-from trajspec.b2d_data import l2_horizon
+from trajspec.metrics import l2_horizon
 from trajspec.draft_head import DraftHead, pack_extra, pack_speed
 from trajspec.eval_loop import l2_uniad_at
 from trajspec.nusc_data import VAL_PKL, load_infos, pack_sample_rnb, token_index

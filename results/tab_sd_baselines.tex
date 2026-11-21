@@ -1,19 +1,12 @@
 \begin{table*}[t]
 \centering
-\caption{Speculative-decoding baselines on the same frozen teachers. All SD variants share one one-shot draft and one teacher-force verify; only the accept rule and reject recovery change. Acc.\ / ADE are on the 15\% hash holdout ($n{=}903$, seed 17). Latency is CUDA-sync wall-clock on NVIDIA L20 ($n{=}12$, start index 1500), with AR / TrajSpecDec milliseconds taken from the empty-GPU live protocol and other methods rescaled by the measured decode-time ratio. Spd.\ is end-to-end vs AR greedy. Spec-VLA (exact) is greedy token match; (id-relax) uses $|\Delta\mathrm{id}|\le 16$ on the AutoVLA codebook; (pose-relax) is a metre-space adaptation with Euclidean radius $0.5$\,m. Scaffold-SD auto-accepts non-numeric BPE tokens. KERV-lite uses geometric accept then a bicycle tail \emph{without} AR re-decode. ADE$_T$ / ADE$_G$: average L2 (m) vs teacher / GT.}
+\caption{Speculative-decoding baselines on the same frozen OpenDriveVLA-0.5B + UniAD teacher. All SD variants share one one-shot draft and one teacher-force verify; only the accept rule and reject recovery change. Acc.\ / ADE are on the 15\% hash holdout ($n{=}903$, seed 17). Latency is CUDA-sync wall-clock on NVIDIA L20 ($n{=}12$, start index 1500), with AR / TrajSpecDec milliseconds taken from the empty-GPU live protocol and other methods rescaled by the measured decode-time ratio. Spd.\ is end-to-end vs AR greedy. Spec-VLA (exact) is greedy token match; (pose-relax) is a metre-space adaptation with Euclidean radius $0.5$\,m. Scaffold-SD auto-accepts non-numeric BPE tokens. KERV-lite uses geometric accept then a bicycle tail \emph{without} AR re-decode. ADE$_T$ / ADE$_G$: average L2 (m) vs teacher / GT.}
 \label{tab:sd-baselines}
 \small
 \setlength{\tabcolsep}{3.0pt}
 \begin{tabular}{llcccccc}
 \toprule
 Teacher & Method & Acc. & Dec.\ (ms) & E2E (ms) & Spd. & ADE$_T$ & ADE$_G$ \\
-\midrule
-AutoVLA-3B & AR greedy & --- & 213 & 430 & 1.00$\times$ & 0.000 & 1.648 \\
- & Spec-VLA (exact) & 0.32 & 239 & 456 & 0.94$\times$ & 0.001 & 1.648 \\
- & Spec-VLA (id-relax) & 0.37 & 261 & 478 & 0.90$\times$ & 0.002 & 1.647 \\
- & Spec-VLA (pose-relax) & 4.24 & 92 & 308 & 1.39$\times$ & 0.121 & 1.647 \\
- & KERV-lite & 4.11 & 78 & 295 & 1.46$\times$ & 0.513 & 1.592 \\
- & \textbf{TrajSpecDec (ours)} & \textbf{4.11} & \textbf{102} & \textbf{319} & \textbf{1.35$\times$} & \textbf{0.113} & \textbf{1.649} \\
 \midrule
 OpenDriveVLA-0.5B & AR greedy & --- & 1194 & 1640 & 1.00$\times$ & 0.000 & 1.872 \\
  & Spec-VLA (exact) & 0.01 & 1132 & 1578 & 1.04$\times$ & 0.000 & 1.872 \\

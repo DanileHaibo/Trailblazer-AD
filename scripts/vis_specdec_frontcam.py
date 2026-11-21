@@ -27,20 +27,22 @@ from trajspec.nusc_data import VAL_PKL, _cam_abs, extras_for_tokens, load_infos,
 
 HORIZON = 6
 CACHE = ROOT / "results"
-TOKEN_LIST = CACHE / "motivation_frontcam" / "frame_tokens.json"
+TOKEN_LIST = Path("/home/xinhchen2/hhb/TrajSpecDec/results/motivation_frontcam/frame_tokens.json")
 OUT_ROOT = CACHE / "motivation_frontcam" / "specdec"
+# TrajSpecDec still holds the RnB teacher cache used for these figures.
+TSD = Path("/home/xinhchen2/hhb/TrajSpecDec/results")
 MODELS = {
-    "autovla": {
-        "cache": CACHE / "cache_autovla_nusc_trajonly.pt",
-        "ckpt": CACHE / "specdec_autovla_trajonly.pt",
-        "title": "AutoVLA-3B",
-        "tokens": "list",
-    },
     "opendrive": {
         "cache": CACHE / "cache_opendrive_nusc_val.pt",
         "ckpt": CACHE / "specdec_opendrive_heldout.pt",
         "title": "OpenDriveVLA-0.5B",
         "tokens": "slice1500",
+    },
+    "rnb": {
+        "cache": TSD / "cache_rnb_nusc_val.pt",
+        "ckpt": ROOT / "weights" / "draft_waypoints_nusc.pt",
+        "title": "R&B-EnCoRe-4B",
+        "tokens": "list",
     },
 }
 FONT_TTC = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
@@ -422,14 +424,13 @@ def load_tokens(cfg: dict, n: int, ids: str) -> list[str]:
         token_src = None
         for cand in (
             TOKEN_LIST,
-            OUT_ROOT / "autovla" / "manifest.json",
             OUT_ROOT / "manifest.json",
         ):
             if cand.exists():
                 token_src = cand
                 break
         if token_src is None:
-            raise SystemExit("no AutoVLA frame token list found")
+            raise SystemExit("no frame token list found (run with --model opendrive first)")
         prev = json.loads(token_src.read_text())
         if isinstance(prev, dict) and "tokens" in prev:
             all_tokens = list(prev["tokens"])
@@ -586,17 +587,14 @@ def _refresh_copies(out_dir: Path):
     if show.exists():
         for p in show.glob("*.jpg"):
             name = p.name
-            if name.startswith("auto"):
-                stem = name[len("auto") :]
-                src = (out_dir.parent / "autovla" / stem) if out_dir.name == "autovla" else None
-                if src is None:
-                    continue
-                if not src.exists() and stem.endswith(".jpg") and "_" not in stem:
-                    # auto0031.jpg may not match 0031_*.jpg
-                    cands = sorted((out_dir.parent / "autovla").glob(f"{Path(stem).stem}_*.jpg"))
-                    src = cands[0] if cands else None
-                if src and src.exists():
-                    shutil.copy2(src, p)
+            if not name.startswith("auto"):
+                continue
+            stem = name[len("auto") :]
+            if "_" in stem:
+                continue
+            cands = sorted(out_dir.glob(f"{Path(stem).stem}_*.jpg"))
+            if cands:
+                shutil.copy2(cands[0], p)
             else:
                 src = out_dir / name
                 if src.exists():
@@ -661,12 +659,12 @@ def main():
     p.add_argument("--n", type=int, default=1000)
     p.add_argument("--ids", default="", help="comma-separated indices into the token list (smoke)")
     p.add_argument("--z", type=float, default=0.25)
-    p.add_argument("--model", choices=["autovla", "opendrive", "both"], default="both")
+    p.add_argument("--model", choices=["opendrive", "rnb", "both"], default="both")
     p.add_argument("--out", default=str(OUT_ROOT))
     p.add_argument("--rerender", action="store_true", help="redraw existing trajs.pt with current fonts")
     args = p.parse_args()
     out_root = Path(args.out)
-    names = ["autovla", "opendrive"] if args.model == "both" else [args.model]
+    names = ["opendrive", "rnb"] if args.model == "both" else [args.model]
     for name in names:
         if args.rerender:
             rerender_model(name, args.z, out_root)

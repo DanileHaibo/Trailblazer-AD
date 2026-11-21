@@ -6,7 +6,6 @@ from trajspec.spec_loop import SpecResult, speculative_trajectory
 from trajspec.serialize import (
     format_opendrive_traj,
     parse_opendrive_traj,
-    ActionCodebook,
 )
 
 __all__ = [
@@ -17,5 +16,4 @@ __all__ = [
     "speculative_trajectory",
     "format_opendrive_traj",
     "parse_opendrive_traj",
-    "ActionCodebook",
 ]

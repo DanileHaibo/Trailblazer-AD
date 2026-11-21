@@ -2,8 +2,8 @@
 """Overlay VLA / ego-kinematics / ordinary MLP trajectories on CAM_FRONT.
 
 Uses the same 1000-frame protocol as the motivation L2 plots:
-  AutoVLA  = first N rows of cache_autovla_nusc_val.pt
   OpenDrive = rows [1500, 1500+N) of cache_opendrive_nusc_val.pt
+  R&B       = first N rows of the RnB val cache
 Ordinary MLP is a 2-layer head on prefill hidden + 16-d extras, trained on a
 disjoint split vs GT (not the TrajSpecDec residual draft).
 """
@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import math
 import shutil
 import sys
@@ -36,6 +37,10 @@ from trajspec.nusc_data import (  # noqa: E402
 HORIZON = 6
 DT = 0.5
 CACHE = ROOT / "results"
+# The RnB teacher cache lives in TrajSpecDec; override with TRAJSPEC_RNB_CACHE.
+RNB_CACHE = Path(
+    os.environ.get("TRAJSPEC_RNB_CACHE", "/home/xinhchen2/hhb/TrajSpecDec/results/cache_rnb_nusc_val.pt")
+)
 OUT_ROOT = CACHE / "motivation_frontcam"
 FONT_TTC = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
 FONT_LEGEND = 40
@@ -400,21 +405,7 @@ h1{{margin:16px}}
 
 
 def run_model(name: str, n: int, z_ego: float, device: torch.device, out_dir: Path, start: int = 0):
-    if name == "autovla":
-        cache_va = CACHE / "cache_autovla_nusc_val.pt"
-        cache_tr = CACHE / "cache_autovla_nusc_train.pt"
-        n_val = len(torch.load(cache_va, map_location="cpu", weights_only=False)["rows"])
-        ev_idx = list(range(start, min(start + n, n_val)))
-        print(f"[AutoVLA] load val {len(ev_idx)}", flush=True)
-        tokens, hs, extra, speed, vla, gt, cmds = load_rows(cache_va, ev_idx)
-        n_tr = len(torch.load(cache_tr, map_location="cpu", weights_only=False)["rows"])
-        tr_idx = list(range(min(n_tr, 2000)))
-        print("[AutoVLA] load train for ordinary MLP", flush=True)
-        _, hs_tr, extra_tr, _, _, gt_tr, _ = load_rows(cache_tr, tr_idx)
-        title_prefix = "AutoVLA-3B"
-        steps = 800
-        seed = 0
-    elif name == "opendrive":
+    if name == "opendrive":
         cache = CACHE / "cache_opendrive_nusc_val.pt"
         n_all = len(torch.load(cache, map_location="cpu", weights_only=False)["rows"])
         ev_idx = list(range(1500 + start, min(1500 + start + n, n_all)))
@@ -423,6 +414,19 @@ def run_model(name: str, n: int, z_ego: float, device: torch.device, out_dir: Pa
         tokens, hs, extra, speed, vla, gt, cmds = load_rows(cache, ev_idx)
         _, hs_tr, extra_tr, _, _, gt_tr, _ = load_rows(cache, tr_idx)
         title_prefix = "OpenDriveVLA-0.5B"
+        steps = 800
+        seed = 0
+    elif name == "rnb":
+        cache = RNB_CACHE
+        if not cache.exists():
+            raise SystemExit(f"RnB cache missing: {cache}")
+        n_all = len(torch.load(cache, map_location="cpu", weights_only=False)["rows"])
+        ev_idx = list(range(start, min(start + n, n_all)))
+        tr_idx = list(range(3000, min(5000, n_all)))
+        print(f"[R&B] load eval {len(ev_idx)} + train {len(tr_idx)}", flush=True)
+        tokens, hs, extra, speed, vla, gt, cmds = load_rows(cache, ev_idx)
+        _, hs_tr, extra_tr, _, _, gt_tr, _ = load_rows(cache, tr_idx)
+        title_prefix = "R&B-EnCoRe-4B"
         steps = 800
         seed = 0
     else:
@@ -517,13 +521,13 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--n", type=int, default=1000)
     p.add_argument("--start", type=int, default=0, help="start index inside the eval slice")
-    p.add_argument("--model", choices=["autovla", "opendrive", "both"], default="autovla")
+    p.add_argument("--model", choices=["opendrive", "rnb", "both"], default="both")
     p.add_argument("--z", type=float, default=0.25, help="ego-frame height (m) for ground waypoints")
     p.add_argument("--out", default=str(OUT_ROOT))
     args = p.parse_args()
     device = torch.device("cpu")
     out_root = Path(args.out)
-    models = ["autovla", "opendrive"] if args.model == "both" else [args.model]
+    models = ["opendrive", "rnb"] if args.model == "both" else [args.model]
     for name in models:
         run_model(name, args.n, args.z, device, out_root / name, start=args.start)
 

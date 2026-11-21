@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from trajspec.accept import AcceptConfig, longest_prefix_accept
-from trajspec.b2d_data import l2_horizon
+from trajspec.metrics import l2_horizon
 from trajspec.draft_head import DraftHead
 from trajspec.spec_loop import train_step
 

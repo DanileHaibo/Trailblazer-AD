@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download AutoVLA + OpenDriveVLA + Qwen2.5-VL-3B. Token from HF_TOKEN only."""
+"""Download the two teacher checkpoints. Token from HF_TOKEN only."""
 from __future__ import annotations
 
 import os
@@ -15,9 +15,8 @@ if not TOKEN:
     raise SystemExit("HF_TOKEN is not set")
 
 JOBS = [
-    ("Zewei-Zhou/AutoVLA", "/data2/hf_overlap_models/AutoVLA"),
     ("OpenDriveVLA/OpenDriveVLA-0.5B", "/data2/hf_overlap_models/OpenDriveVLA-0.5B"),
-    ("Qwen/Qwen2.5-VL-3B-Instruct", "/data2/hf_overlap_models/Qwen2.5-VL-3B-Instruct"),
+    ("stanfordasl/nuscenes-waypoints-model", "/data2/hf_overlap_models/nuscenes-waypoints-model"),
 ]
 
 

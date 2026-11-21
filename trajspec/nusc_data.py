@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 
-from trajspec.b2d_data import l2_horizon  # noqa: F401  re-export
+from trajspec.metrics import l2_horizon  # noqa: F401  re-export
 
 # Override with TRAJSPEC_NUSC_ROOT to point at a local nuScenes copy.
 NUSC_ROOT = Path(os.environ.get("TRAJSPEC_NUSC_ROOT", "/home/xinhchen2/hhb/Bench2DriveZoo/data/nuscenes"))
@@ -26,7 +26,7 @@ def load_infos(path: str | Path) -> list[dict]:
 def lidar_to_ego_xy(xy: np.ndarray) -> np.ndarray:
     """VAD nuScenes lidar after ego->lidar: +Y along drive, +X right (cmd x>=2 = right).
 
-    Map to nuScenes-style / AutoVLA / OpenDrive: +X forward, +Y left.
+    Map to nuScenes ego convention (OpenDrive / R&B): +X forward, +Y left.
     """
     xy = np.asarray(xy, dtype=np.float32)
     out = np.empty_like(xy)

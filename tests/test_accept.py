@@ -8,11 +8,49 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from trajspec.accept import AcceptConfig, longest_prefix_accept
-from trajspec.adapters.toy import AutoVLAStyleTeacher, OpenDriveStyleTeacher
 from trajspec.draft_head import DraftHead
-from trajspec.scenes import sample_scenes
+from trajspec.scenes import kinematic_trajectory, sample_scenes
 from trajspec.serialize import format_opendrive_traj, parse_opendrive_traj
 from trajspec.spec_loop import speculative_trajectory
+
+
+class StubWaypointTeacher:
+    """Deterministic in-process teacher for the spec_loop contract.
+
+    Mirrors the real textual-waypoint teachers (OpenDriveVLA / R&B): the same
+    scene always yields the same 6-waypoint trajectory, so accept and tail
+    behaviour can be tested without loading a 4B checkpoint.
+    """
+
+    horizon = 6
+    hidden_size = 32
+
+    def __init__(self):
+        self._traj = {}
+
+    def prefill(self, scene: dict):
+        h = torch.zeros(1, self.hidden_size)
+        traj = kinematic_trajectory(
+            float(scene.get("vehicle_velocity", [3.0])[0] or 3.0),
+            float(scene.get("yaw_rate", 0.0)),
+            self.horizon,
+        )
+        key = id(scene)
+        self._traj[key] = traj
+        return h.squeeze(0), {"scene": key}
+
+    def teacher_waypoints(self, scene: dict, kv, hidden):
+        key = kv["scene"]
+        if key not in self._traj:
+            self.prefill(scene)
+        return self._traj[key]
+
+    def continue_decode(self, scene: dict, kv, accepted, remaining: int):
+        if remaining <= 0:
+            return torch.zeros(0, 2)
+        traj = self.teacher_waypoints(scene, kv, None)
+        start = int(accepted.shape[0])
+        return traj[start : start + remaining]
 
 
 def test_longest_prefix_partial():
@@ -37,7 +75,7 @@ def test_opendrive_roundtrip():
 
 
 def test_spec_never_worse_than_threshold():
-    teacher = OpenDriveStyleTeacher()
+    teacher = StubWaypointTeacher()
     scenes = sample_scenes(8, teacher.horizon, seed=7)
     head = DraftHead(teacher.hidden_size, horizon=teacher.horizon)
     cfg = AcceptConfig(lon_m=0.35, lat_m=0.20)
@@ -52,15 +90,14 @@ def test_spec_never_worse_than_threshold():
         assert r.spec_decode_steps <= r.baseline_decode_steps
 
 
-def test_autovla_quantized_teacher_length():
-    teacher = AutoVLAStyleTeacher()
+def test_teacher_horizon_and_shape():
+    teacher = StubWaypointTeacher()
     sc = sample_scenes(1, teacher.horizon, seed=0)[0]
     h, kv = teacher.prefill(sc)
     wp = teacher.teacher_waypoints(sc, kv, h)
-    assert wp.shape == (10, 2)
-    ids = teacher.codebook.encode(wp)
-    assert len(ids) == 10
-    assert "<action_" in teacher.codebook.format_tokens(ids)
+    assert wp.shape == (6, 2)
+    tail = teacher.continue_decode(sc, kv, wp[:2], 4)
+    assert tail.shape == (4, 2)
 
 
 if __name__ == "__main__":
@@ -68,5 +105,5 @@ if __name__ == "__main__":
     test_longest_prefix_all()
     test_opendrive_roundtrip()
     test_spec_never_worse_than_threshold()
-    test_autovla_quantized_teacher_length()
+    test_teacher_horizon_and_shape()
     print("ok")

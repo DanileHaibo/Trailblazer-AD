@@ -2,7 +2,7 @@
 
 Chosen as the third teacher because it matches OpenDriveVLA on the properties
 that make speculative decoding pay off:
-  * short horizon       6 waypoints / 3 s  (vs AutoVLA 10 / 5 s)
+  * short horizon       6 waypoints / 3 s
   * textual output      "Planned Trajectory:\\n[(x,y), ...]"  (token-by-token)
   * trajectory-only     no chain-of-thought to sit through
 

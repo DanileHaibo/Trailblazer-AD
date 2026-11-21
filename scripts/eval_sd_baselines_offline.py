@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Holdout quality for SD accept policies. Same draft head, no extra teacher forwards.
 
-AutoVLA uses official codebook ids. OpenDrive uses Qwen BPE of the serialized
-[(x,y),...] string (proxy for token-exact / scaffold without live logits).
+OpenDriveVLA uses Qwen BPE of the serialized [(x,y),...] string (proxy for
+token-exact / scaffold without live logits); R&B-EnCoRe shares that tokenization.
 """
 from __future__ import annotations
 
@@ -18,8 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from trajspec.accept import AcceptConfig
-from trajspec.action_quant import load_codebook, xy_to_action_ids
-from trajspec.b2d_data import l2_horizon
+from trajspec.metrics import l2_horizon
 from trajspec.draft_head import DraftHead
 from trajspec.eval_loop import l2_uniad_at, mean_dict
 from trajspec.sd_baselines import (
@@ -31,7 +30,6 @@ from trajspec.sd_baselines import (
     TOKEN_EXACT,
     commit_spec,
     hash_holdout_idx,
-    n_accept_autovla,
     n_accept_opendrive,
 )
 from trajspec.serialize import TRAJ_END, TRAJ_START, format_opendrive_answer
@@ -123,56 +121,6 @@ def summarize_method(rows, tag):
 
 
 @torch.no_grad()
-def eval_autovla(split, head, codebook, cfg, id_radius: int):
-    modes = [
-        ("AR greedy", None),
-        ("Spec-VLA (exact)", TOKEN_EXACT),
-        ("Spec-VLA (id-relax)", SPECVLA_ID),
-        ("Spec-VLA (pose-relax)", SPECVLA_POSE),
-        ("KERV-lite", KERV_LITE),
-        ("TrajSpecDec (ours)", GEOMETRIC),
-    ]
-    hs, extra, speed, ys, gt = split["hs"], split["extra"], split["speed"], split["ys"], split["gt"]
-    drafts = []
-    for i in range(hs.shape[0]):
-        pred = head(
-            hs[i : i + 1].to(DEVICE),
-            extra=extra[i : i + 1].to(DEVICE),
-            speed=speed[i : i + 1].to(DEVICE),
-        )[0].cpu()
-        drafts.append(pred)
-    out = {}
-    for name, mode in modes:
-        rows = []
-        for i, draft in enumerate(drafts):
-            teacher = ys[i]
-            g = gt[i].numpy()
-            has_gt = bool(np.linalg.norm(g) > 0.2)
-            teacher_np = teacher.numpy()
-            if mode is None:
-                spec = teacher_np
-                n_acc = 0
-            else:
-                d_ids = xy_to_action_ids(draft, codebook)
-                t_ids = xy_to_action_ids(teacher, codebook)
-                n_acc = n_accept_autovla(mode, draft, teacher, d_ids, t_ids, cfg, id_radius)
-                spec_t, n_acc, _ = commit_spec(draft, teacher, n_acc, mode, float(speed[i]), horizon=6)
-                spec = spec_t.numpy()
-            rec = {
-                "n_accept": int(n_acc),
-                "has_gt": has_gt,
-                "ade_vs_teacher": round(float(np.linalg.norm(spec[:6] - teacher_np[:6], axis=-1).mean()), 4),
-                "teacher": {**l2_horizon(teacher_np, g), **l2_uniad_at(teacher_np, g)} if has_gt else {},
-                "spec": {**l2_horizon(spec, g), **l2_uniad_at(spec, g)} if has_gt else {},
-            }
-            rows.append(rec)
-        out[name] = summarize_method(rows, name)
-        print(f"[AutoVLA] {name}: accept={out[name]['mean_n_accept']} ADE_T={out[name]['ade_vs_teacher']} "
-              f"ADE_G={out[name]['spec_stp3'].get('ade')}", flush=True)
-    return out
-
-
-@torch.no_grad()
 def eval_opendrive(split, head, tokenizer, cfg):
     modes = [
         ("AR greedy", None),
@@ -237,13 +185,6 @@ def main():
     args = p.parse_args()
     cfg = AcceptConfig(lon_m=0.5, lat_m=0.3)
 
-    av_split = load_split(ROOT / "results/cache_autovla_nusc_trajonly.pt")
-    av_head = load_head(ROOT / "results/specdec_autovla_trajonly.pt", av_split["hidden_size"], av_split["extra_size"])
-    codebook = load_codebook()
-    print(f"[data] AutoVLA holdout n={av_split['hs'].shape[0]} codebook={tuple(codebook.shape)}", flush=True)
-    autovla = eval_autovla(av_split, av_head, codebook, cfg, args.id_radius)
-    del av_head
-
     od_split = load_split(ROOT / "results/cache_opendrive_nusc_val.pt")
     od_head = load_head(ROOT / "results/specdec_opendrive_heldout.pt", od_split["hidden_size"], od_split["extra_size"])
     from transformers import AutoTokenizer
@@ -260,12 +201,10 @@ def main():
             "accept": {"lon_m": 0.5, "lat_m": 0.3, "id_radius": args.id_radius},
             "note": (
                 "Offline proxy: teacher suffix stands in for serial AR after reject. "
-                "AutoVLA token-exact / Spec-VLA-id use codebook ids from draft vs teacher xy. "
                 "OpenDrive token-exact / scaffold tokenize the official 2-decimal string "
                 "(live eval uses teacher-force logits)."
             ),
         },
-        "autovla": autovla,
         "opendrive": opendrive,
     }
     Path(args.out).write_text(json.dumps(blob, ensure_ascii=False, indent=2))

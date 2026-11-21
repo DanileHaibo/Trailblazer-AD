@@ -4,11 +4,13 @@
 OpenDriveVLA-0.5B official protocol: GPT-Driver/UniAD occupancy + traj mask,
 UniAD (t=1/2/3s) and ST-P3 (cumulative) L2 / box-collision.
 
-AutoVLA official nuScenes protocol uses the same occupancy GT after mapping
+Every teacher is scored against the same occupancy GT after coordinate mapping
 ego (+X forward, +Y left) into UniAD lidar (x right, y forward). Primary
-AutoVLA number is NAVSIM PDMS, which this script does not run.
+Only the OpenDrive-style textual-waypoint teachers are covered here.
 """
 from __future__ import annotations
+
+import os
 
 import argparse
 import json
@@ -46,25 +48,6 @@ PAPER = {
         "uniad_col": [0.00, 0.15, 0.63],
         "uniad_col_avg": 0.26,
         "source": "OpenDriveVLA paper Table I, OpenDriveVLA-0.5B",
-    },
-    "autovla_nusc_cot": {
-        "dataset": "nuScenes val open-loop (paper Table S2, AutoVLA w/ CoT)",
-        "stp3_l2": [0.21, 0.38, 0.60],
-        "stp3_l2_avg": 0.40,
-        "stp3_col": [0.13, 0.18, 0.28],
-        "stp3_col_avg": 0.20,
-        "uniad_l2": [0.28, 0.66, 1.16],
-        "uniad_l2_avg": 0.70,
-        "uniad_col": [0.14, 0.25, 0.53],
-        "uniad_col_avg": 0.31,
-        "source": "AutoVLA paper Table S2",
-    },
-    "autovla_navsim": {
-        "dataset": "NAVSIM navtest (nuPlan OpenScene)",
-        "pdms": 89.11,
-        "source": "AutoVLA paper Table 1, AutoVLA (Post-RFT); ckpt AutoVLA_PDMS_89",
-        "ran": False,
-        "reason": "Needs NAVSIM metric cache + AutoVLA agent closed-loop PDMS; not wired for specdec.",
     },
 }
 
@@ -291,9 +274,6 @@ def round_report(rep: dict) -> dict:
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    p.add_argument("--autovla-only", action="store_true")
-    p.add_argument("--av-cache", type=Path, default=RESULTS / "cache_autovla_nusc_val.pt")
-    p.add_argument("--av-ckpt", type=Path, default=RESULTS / "specdec_autovla_heldout.pt")
     p.add_argument("--out", type=Path, default=RESULTS / "official_benchmark_compare.json")
     args = p.parse_args()
     device = torch.device(args.device if args.device == "cpu" or torch.cuda.is_available() else "cpu")
@@ -304,74 +284,74 @@ def main():
         "method": {
             "accept": {"lon_m": 0.50, "lat_m": 0.30},
             "spec": "accepted draft prefix + teacher correction + teacher suffix",
-            "coords": "OpenDrive cache is already UniAD (x right, y forward). AutoVLA cache is ego (+X fwd, +Y left) and is mapped before scoring.",
+            "coords": "OpenDrive cache is already UniAD (x right, y forward). R&B cache is ego (+X fwd, +Y left) and is mapped before scoring.",
         },
     }
 
-    if not args.autovla_only:
-        print("=== OpenDriveVLA-0.5B on official nuScenes val ===", flush=True)
-        od_tokens, od_teacher, od_spec, od_draft, od_accept = dump_from_cache(
-            RESULTS / "cache_opendrive_nusc_val.pt",
-            RESULTS / "specdec_opendrive_heldout.pt",
-            device,
-            refresh_extra=True,
-            to_od=False,
-        )
-        _, va_idx = _hash_mask(od_tokens)
-        holdout = {od_tokens[i] for i in va_idx.tolist()}
-        od_full = {
-            "teacher": official_pair(od_teacher),
-            "spec": official_pair(od_spec),
-            "draft": official_pair(od_draft),
-        }
-        od_hold = {
-            "teacher": official_pair(od_teacher, subset=holdout),
-            "spec": official_pair(od_spec, subset=holdout),
-            "draft": official_pair(od_draft, subset=holdout),
-        }
-        out["opendrive"] = {
-            "accept_full_val": od_accept,
-            "holdout_n": len(holdout),
-            "full_val": {k: round_report(v) for k, v in od_full.items()},
-            "hash_holdout": {k: round_report(v) for k, v in od_hold.items()},
-        }
-
-    print("=== AutoVLA on official nuScenes occupancy GT ===", flush=True)
-    av_tokens, av_teacher, av_spec, av_draft, av_accept = dump_from_cache(
-        args.av_cache,
-        args.av_ckpt,
+    print("=== OpenDriveVLA-0.5B on official nuScenes val ===", flush=True)
+    od_tokens, od_teacher, od_spec, od_draft, od_accept = dump_from_cache(
+        RESULTS / "cache_opendrive_nusc_val.pt",
+        RESULTS / "specdec_opendrive_heldout.pt",
         device,
         refresh_extra=True,
-        to_od=True,
+        to_od=False,
     )
-    _, av_va = _hash_mask(av_tokens)
-    av_holdout = {av_tokens[i] for i in av_va.tolist()}
-    av_full = {
-        "teacher": official_pair(av_teacher),
-        "spec": official_pair(av_spec),
-        "draft": official_pair(av_draft),
+    _, va_idx = _hash_mask(od_tokens)
+    holdout = {od_tokens[i] for i in va_idx.tolist()}
+    od_full = {
+        "teacher": official_pair(od_teacher),
+        "spec": official_pair(od_spec),
+        "draft": official_pair(od_draft),
     }
-    av_hold = {
-        "teacher": official_pair(av_teacher, subset=av_holdout),
-        "spec": official_pair(av_spec, subset=av_holdout),
-        "draft": official_pair(av_draft, subset=av_holdout),
+    od_hold = {
+        "teacher": official_pair(od_teacher, subset=holdout),
+        "spec": official_pair(od_spec, subset=holdout),
+        "draft": official_pair(od_draft, subset=holdout),
     }
-    out["autovla_nuscenes"] = {
-        "accept_full_val": av_accept,
-        "n_cached": len(av_tokens),
-        "holdout_n": len(av_holdout),
-        "full_val": {k: round_report(v) for k, v in av_full.items()},
-        "hash_holdout": {k: round_report(v) for k, v in av_hold.items()},
-        "note": "Same protocol as OpenDrive: hash 15% holdout draft train, official occupancy GT, ego→UniAD coords.",
+    out["opendrive"] = {
+        "accept_full_val": od_accept,
+        "holdout_n": len(holdout),
+        "full_val": {k: round_report(v) for k, v in od_full.items()},
+        "hash_holdout": {k: round_report(v) for k, v in od_hold.items()},
     }
+
+    print("=== R&B-EnCoRe-4B on official nuScenes occupancy GT ===", flush=True)
+    rnb_cache = Path(os.environ.get("TRAJSPEC_RNB_CACHE", "/home/xinhchen2/hhb/TrajSpecDec/results/cache_rnb_nusc_val.pt"))
+    rnb_ckpt = Path(os.environ.get("TRAJSPEC_RNB_DRAFT", "/home/xinhchen2/hhb/TrajSpecDec/results/specdec_rnb_full_retrain.pt"))
+    if rnb_cache.exists() and rnb_ckpt.exists():
+        rnb_tokens, rnb_teacher, rnb_spec, rnb_draft, rnb_accept = dump_from_cache(
+            rnb_cache,
+            rnb_ckpt,
+            device,
+            refresh_extra=True,
+            to_od=True,
+        )
+        _, rnb_va = _hash_mask(rnb_tokens)
+        rnb_holdout = {rnb_tokens[i] for i in rnb_va.tolist()}
+        rnb_full = {
+            "teacher": official_pair(rnb_teacher),
+            "spec": official_pair(rnb_spec),
+            "draft": official_pair(rnb_draft),
+        }
+        rnb_hold = {
+            "teacher": official_pair(rnb_teacher, subset=rnb_holdout),
+            "spec": official_pair(rnb_spec, subset=rnb_holdout),
+            "draft": official_pair(rnb_draft, subset=rnb_holdout),
+        }
+        out["rnb"] = {
+            "accept_full_val": rnb_accept,
+            "n_cached": len(rnb_tokens),
+            "holdout_n": len(rnb_holdout),
+            "full_val": {k: round_report(v) for k, v in rnb_full.items()},
+            "hash_holdout": {k: round_report(v) for k, v in rnb_hold.items()},
+            "note": "Same protocol as OpenDrive: hash 15% holdout draft train, official occupancy GT, ego->UniAD coords.",
+        }
 
     args.out.write_text(json.dumps(out, ensure_ascii=False, indent=2))
     print(json.dumps(
         {
             "opendrive_full": out.get("opendrive", {}).get("full_val"),
-            "autovla_full": out["autovla_nuscenes"]["full_val"],
-            "autovla_holdout": out["autovla_nuscenes"]["hash_holdout"],
-            "autovla_accept": av_accept,
+            "rnb_full": out.get("rnb", {}).get("full_val"),
         },
         indent=2,
     ), flush=True)

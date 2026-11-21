@@ -10,10 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "results" / "motivation_figs"
 
 T = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
-AV = {
-    "VLA": [0.2096, 0.4545, 0.8108, 1.306, 1.928, 2.6945],
-    "Ego kinematics only": [0.16, 0.413, 0.8604, 1.5127, 2.382, 3.4687],
-    "Ordinary MLP": [0.4403, 0.8134, 1.2754, 1.7025, 2.2367, 2.8036],
+RNB = {
+    "VLA": [0.1644, 0.3448, 0.5942, 0.9407, 1.3924, 1.9737],
+    "Ego kinematics only": [0.1544, 0.412, 0.837, 1.462, 2.297, 3.3475],
+    "Ordinary MLP": [0.4661, 0.8285, 1.1692, 1.5605, 2.0428, 2.5977],
 }
 OD = {
     "VLA": [0.4666, 0.9467, 1.4765, 2.0616, 2.7102, 3.4258],
@@ -69,8 +69,8 @@ def main():
     setup_style()
     OUT.mkdir(parents=True, exist_ok=True)
     jobs = [
-        ("motivation_l2_autovla", AV, "AutoVLA-3B, 1000 val frames, mean L2 vs GT", 4.0),
         ("motivation_l2_opendrive", OD, "OpenDriveVLA-0.5B, 1000 val frames, mean L2 vs GT", 5.6),
+        ("motivation_l2_rnb", RNB, "R&B-EnCoRe-4B, 1000 val frames, mean L2 vs GT", 3.6),
     ]
     for stem, series, title, ymax in jobs:
         fig, ax = plt.subplots(figsize=(6.6, 4.4), dpi=150)

@@ -1,13 +1,15 @@
-"""Accept policies for SD baselines on AutoVLA / OpenDriveVLA.
+"""Accept policies for SD baselines on OpenDriveVLA / R&B-EnCoRe.
 
 All methods share the same one-shot DraftHead proposal and (in live eval) the
 same teacher-force verify. Only the accept rule and the reject recovery differ.
 
   token_exact   — Leviathan/Chen greedy SD; draft token must equal teacher token
-  specvla_id    — Spec-VLA relaxed accept on codebook / bin ids |Δid| ≤ r
+  specvla_id    — Spec-VLA relaxed accept on token ids |Δid| ≤ r
   scaffold      — OpenDrive: punctuation/structure tokens may mismatch
   geometric     — TrajSpecDec lon/lat metres (ours)
   kerv_lite     — geometric accept, then bicycle-fill the tail (no AR re-decode)
+  kerv_bonus    — geometric accept, teacher bonus at reject, bicycle after (no AR)
+  geom_blend    — geometric accept, seam-blend into verify teacher_xy (no AR)
 """
 from __future__ import annotations
 
@@ -24,9 +26,12 @@ SPECVLA_ID = "specvla_id"
 SPECVLA_POSE = "specvla_pose"
 SCAFFOLD = "scaffold"
 KERV_LITE = "kerv_lite"
+KERV_BONUS = "kerv_bonus"
+GEOM_BLEND = "geom_blend"
 
-# Spec-VLA uses r=5–9 on 256 OpenVLA bins. AutoVLA codebook is ~2048 unordered
-# cluster ids, so a small id radius is already a large relaxation.
+# Spec-VLA uses r=5–9 on 256 discretized bins; the waypoint tokenizers here
+# put a whole coordinate in one token, so a small id radius is already a large
+# relaxation.
 DEFAULT_ID_RADIUS = 16
 DEFAULT_POSE_M = 0.50
 
@@ -93,29 +98,6 @@ def waypoints_in_token_prefix(tokenizer, token_ids: Sequence[int]) -> int:
         return 0
     text = tokenizer.decode(list(token_ids), skip_special_tokens=False)
     return len(extract_opendrive_points(text))
-
-
-def n_accept_autovla(
-    mode: str,
-    draft_xy: torch.Tensor,
-    teacher_xy: torch.Tensor,
-    draft_ids: Sequence[int],
-    teacher_ids: Sequence[int],
-    cfg: AcceptConfig | None = None,
-    id_radius: int = DEFAULT_ID_RADIUS,
-    pose_m: float = DEFAULT_POSE_M,
-) -> int:
-    mode = str(mode)
-    k = min(len(draft_ids), len(teacher_ids), int(draft_xy.shape[0]), int(teacher_xy.shape[0]))
-    if mode in (GEOMETRIC, KERV_LITE):
-        return longest_prefix_accept(draft_xy[:k], teacher_xy[:k], cfg)
-    if mode == TOKEN_EXACT:
-        return longest_id_prefix(draft_ids[:k], teacher_ids[:k], radius=0)
-    if mode == SPECVLA_ID:
-        return longest_id_prefix(draft_ids[:k], teacher_ids[:k], radius=id_radius)
-    if mode == SPECVLA_POSE:
-        return longest_pose_prefix(draft_xy[:k], teacher_xy[:k], tau_m=pose_m)
-    raise ValueError(f"unknown AutoVLA accept mode {mode}")
 
 
 def n_accept_opendrive(
@@ -247,6 +229,35 @@ def commit_spec(
     n = max(0, min(int(n_acc), k))
     if str(mode) == KERV_LITE:
         spec = kinematic_complete(d[:k], n, speed_ms, horizon=k)
+        return spec, n, 0
+    if str(mode) == KERV_BONUS:
+        # Keep accepted draft, splice teacher bonus point, bicycle-fill the rest.
+        # No LLM serial tail — bicycle-fill keeps E2E below the AR baseline.
+        if n >= k:
+            return d[:k], n, 0
+        out = d[:k].clone()
+        out[n] = t[n]
+        if n + 1 < k:
+            # Bicycle from the teacher bonus along draft (or teacher) heading.
+            v = max(float(speed_ms), 0.0)
+            if n >= 1:
+                delta = out[n] - out[n - 1]
+            else:
+                delta = out[n]
+            heading = math.atan2(float(delta[1]), float(delta[0] + 1e-6))
+            if v < 1e-3:
+                v = float(delta.norm()) / 0.5
+            step = out.new_tensor([v * 0.5 * math.cos(heading), v * 0.5 * math.sin(heading)])
+            cur = out[n].clone()
+            for i in range(n + 1, k):
+                cur = cur + step
+                out[i] = cur
+        return out, n, 0
+    if str(mode) == GEOM_BLEND:
+        # Free seam into the parallel-verify teacher trajectory (no serial AR).
+        if n >= k:
+            return d[:k], n, 0
+        spec = seam_blend(d[:k], t[:k], n, horizon=k)
         return spec, n, 0
     if n >= k:
         return d[:k], n, 0

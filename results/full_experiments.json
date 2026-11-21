@@ -1,76 +1,4 @@
 {
-  "autovla": {
-    "name": "AutoVLA-3B",
-    "n": 2000,
-    "n_with_gt": 1717,
-    "seams": {
-      "hard": {
-        "mean_n_accept": 3.777,
-        "decode_speedup": 3.303,
-        "frac_accept_ge2": 0.979,
-        "frac_accept_ge4": 0.493,
-        "frac_accept_6": 0.175,
-        "accept_dist": {
-          "0": 0.001,
-          "1": 0.021,
-          "2": 0.147,
-          "3": 0.338,
-          "4": 0.193,
-          "5": 0.125,
-          "6": 0.175
-        },
-        "spec_stp3": {
-          "l2_1s": 0.3636,
-          "l2_2s": 0.7456,
-          "l2_3s": 1.2713,
-          "ade": 1.2713
-        },
-        "spec_uniad": {
-          "l2_at_1s": 0.5006,
-          "l2_at_2s": 1.3756,
-          "l2_at_3s": 2.6708
-        }
-      },
-      "blend": {
-        "mean_n_accept": 3.777,
-        "decode_speedup": 3.303,
-        "frac_accept_ge2": 0.979,
-        "frac_accept_ge4": 0.493,
-        "frac_accept_6": 0.175,
-        "accept_dist": {
-          "0": 0.001,
-          "1": 0.021,
-          "2": 0.147,
-          "3": 0.338,
-          "4": 0.193,
-          "5": 0.125,
-          "6": 0.175
-        },
-        "spec_stp3": {
-          "l2_1s": 0.3616,
-          "l2_2s": 0.7287,
-          "l2_3s": 1.249,
-          "ade": 1.249
-        },
-        "spec_uniad": {
-          "l2_at_1s": 0.4967,
-          "l2_at_2s": 1.3315,
-          "l2_at_3s": 2.6708
-        }
-      }
-    },
-    "teacher_stp3": {
-      "l2_1s": 0.3659,
-      "l2_2s": 0.7518,
-      "l2_3s": 1.2762,
-      "ade": 1.2762
-    },
-    "teacher_uniad": {
-      "l2_at_1s": 0.5048,
-      "l2_at_2s": 1.3849,
-      "l2_at_3s": 2.6731
-    }
-  },
   "opendrive": {
     "name": "OpenDriveVLA-0.5B",
     "n": 6019,
@@ -142,5 +70,86 @@
       "l2_at_2s": 1.9742,
       "l2_at_3s": 3.4163
     }
+  },
+  "rnb": {
+    "name": "R&B-EnCoRe-4B (stanfordasl/nuscenes-waypoints-model)",
+    "n": 6015,
+    "mean_n_accept": 4.144,
+    "accept_dist": {
+      "0": 0.113,
+      "1": 0.085,
+      "2": 0.089,
+      "3": 0.077,
+      "4": 0.059,
+      "5": 0.044,
+      "6": 0.532
+    },
+    "frac_accept_6": 0.532,
+    "speedup_vs_official_generate": 2.725,
+    "measured_ms": {
+      "official_generate": {
+        "mean": 2348.8,
+        "p50": 2359.35,
+        "p90": 2417.41
+      },
+      "spec_e2e": {
+        "mean": 861.94,
+        "p50": 118.54,
+        "p90": 2331.51
+      },
+      "prefill": {
+        "mean": 74.16,
+        "p50": 73.55,
+        "p90": 74.07
+      },
+      "verify": {
+        "mean": 42.67,
+        "p50": 42.43,
+        "p90": 43.17
+      },
+      "tail": {
+        "mean": 744.03,
+        "p50": 0.0,
+        "p90": 2214.0
+      },
+      "draft": {
+        "mean": 1.08,
+        "p50": 1.07,
+        "p90": 1.13
+      }
+    },
+    "teacher": {
+      "stp3": {
+        "l2_1s": 0.3163,
+        "l2_2s": 0.7489,
+        "l2_3s": 1.4114,
+        "ade": 1.4114
+      }
+    },
+    "spec_hard": {
+      "stp3": {
+        "l2_1s": 0.3051,
+        "l2_2s": 0.7252,
+        "l2_3s": 1.3845,
+        "ade": 1.3845
+      }
+    },
+    "spec_blend": {
+      "stp3": {
+        "l2_1s": 0.3051,
+        "l2_2s": 0.7252,
+        "l2_3s": 1.3845,
+        "ade": 1.3845
+      }
+    },
+    "draft": {
+      "stp3": {
+        "l2_1s": 0.2986,
+        "l2_2s": 0.7228,
+        "l2_3s": 1.3705,
+        "ade": 1.3705
+      }
+    },
+    "source": "results/live_waypoints_rnb_full_6019.json + results/specdec_waypoints_rnb_retrain.json"
   }
 }

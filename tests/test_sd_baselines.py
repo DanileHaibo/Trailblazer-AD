@@ -15,7 +15,7 @@ from trajspec.sd_baselines import (
     commit_spec,
     kinematic_complete,
     longest_id_prefix,
-    n_accept_autovla,
+    n_accept_opendrive,
 )
 
 
@@ -25,14 +25,19 @@ def test_id_prefix():
     assert longest_id_prefix([10, 20], [14, 20], radius=2) == 0
 
 
-def test_token_exact_stricter_than_geometry():
+class _FakeTokenizer:
+    """Minimal stand-in: one waypoint per token, so token counts map to points."""
+
+    def decode(self, ids, skip_special_tokens=True):
+        return "".join(f"({i}.00,0.00)," for i in ids)
+
+
+def test_geometric_accept_stops_at_first_violation():
     draft = torch.tensor([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
-    teacher = torch.tensor([[0.02, 0.01], [1.04, -0.02], [2.0, 0.0]])
+    teacher = torch.tensor([[0.02, 0.01], [3.00, -0.02], [2.0, 0.0]])
     cfg = AcceptConfig(lon_m=0.5, lat_m=0.3)
-    n_geo = n_accept_autovla(GEOMETRIC, draft, teacher, [0, 1, 2], [9, 8, 2], cfg)
-    n_tok = n_accept_autovla(TOKEN_EXACT, draft, teacher, [0, 1, 2], [9, 8, 2], cfg)
-    assert n_geo == 3
-    assert n_tok == 0
+    n_geo = n_accept_opendrive(GEOMETRIC, draft, teacher, [0, 1, 2], [0, 1, 2], _FakeTokenizer(), cfg)
+    assert n_geo == 1
 
 
 def test_kerv_no_serial():
@@ -56,7 +61,7 @@ def test_kinematic_from_empty():
 
 if __name__ == "__main__":
     test_id_prefix()
-    test_token_exact_stricter_than_geometry()
+    test_geometric_accept_stops_at_first_violation()
     test_kerv_no_serial()
     test_kinematic_from_empty()
     print("ok")

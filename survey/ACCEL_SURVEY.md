@@ -476,8 +476,8 @@ Zora（arXiv 2611.11098）主张用 RAG 检索替代神经网络草稿。
 - vLLM — SOSP 2023；FlashAttention — NeurIPS 2022
 - AWQ — MLSys 2024；GPTQ — ICLR 2023；SmoothQuant — ICML 2023
 - Fast-dLLM v1/v2 — ICLR 2026
-- OpenDriveVLA — AAAI 2026（我们的 teacher）
-- AutoVLA — NeurIPS 2025（我们的另一个 teacher）
+- OpenDriveVLA — AAAI 2026（我们的 teacher #1）
+- R&B-EnCoRe — 我们的 teacher #2（trajectory-only waypoints）
 
 **预印本（不可称顶会）**
 
@@ -495,12 +495,12 @@ Zora（arXiv 2611.11098）主张用 RAG 检索替代神经网络草稿。
 | 环境 | torch | transformers | 用途 |
 |---|---|---|---|
 | `unidrivevla` | 2.5.1+cu118 | 4.57.1 | **本文全部 OpenDriveVLA 实验**（llava + mmengine） |
-| `qwendrive` | 2.6.0+cu124 | 5.16.1 | AutoVLA（Qwen2.5-VL，需 transformers ≥5） |
+| `qwendrive` | 2.6.0+cu124 | 5.16.1 | R&B-EnCoRe（Qwen3-VL，需 transformers ≥5） |
 | `morphx` | 2.6.0+cu124 | 4.57.1 | 备选 |
 | `spec_openvla` / `spec_nora` / `spec_pi05` | 2.2 / 2.4 / 2.10 | 4.40 / 4.50 / 4.58 | 其他 VLA 复现线 |
 
 已知坏环境（不要用）：`safebench`、`safebench_test`（缺 `libcudnn.so.9`）、
-`vista`（缺 `urllib3`）、`TCP`（缺 `sympy`）、`autovla` / `maptr`（无 torch 或无 transformers）。
+`vista`（缺 `urllib3`）、`TCP`（缺 `sympy`）、`maptr`（无 torch 或无 transformers）。
 
 ```bash
 UNI=/data2/conda_env/unidrivevla/bin/python

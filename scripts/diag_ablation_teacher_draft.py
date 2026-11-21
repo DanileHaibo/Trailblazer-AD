@@ -6,6 +6,8 @@ ST-P3 L2/col are vs official occupancy GT.
 """
 from __future__ import annotations
 
+import os
+
 import json
 import sys
 from pathlib import Path
@@ -146,13 +148,16 @@ def main():
         to_od=False,
         device=device,
     )
-    out["autovla_trajonly"] = run_one(
-        "AutoVLA-3B traj-only",
-        RESULTS / "cache_autovla_nusc_trajonly.pt",
-        RESULTS / "specdec_autovla_trajonly.pt",
-        to_od=True,
-        device=device,
-    )
+    rnb_cache = Path(os.environ.get("TRAJSPEC_RNB_CACHE", "/home/xinhchen2/hhb/TrajSpecDec/results/cache_rnb_nusc_val.pt"))
+    rnb_ckpt = Path(os.environ.get("TRAJSPEC_RNB_DRAFT", "/home/xinhchen2/hhb/TrajSpecDec/results/specdec_rnb_full_retrain.pt"))
+    if rnb_cache.exists() and rnb_ckpt.exists():
+        out["rnb"] = run_one(
+            "R&B-EnCoRe-4B",
+            rnb_cache,
+            rnb_ckpt,
+            to_od=False,
+            device=device,
+        )
     path = RESULTS / "ablation_teacher_draft_rerun.json"
     path.write_text(json.dumps(out, ensure_ascii=False, indent=2))
     slim = {

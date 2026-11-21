@@ -13,6 +13,8 @@ learns ego-state corrections (command / kappa / history) toward the teacher.
 """
 from __future__ import annotations
 
+import os
+
 import json
 import sys
 from pathlib import Path
@@ -199,18 +201,9 @@ def run_one(name: str, cache: Path, ev_idx: list[int], tr_idx: list[int], to_od:
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    av_cache = RESULTS / "cache_autovla_nusc_trajonly.pt"
     od_cache = RESULTS / "cache_opendrive_nusc_val.pt"
-    n_av = len(torch.load(av_cache, map_location="cpu", weights_only=False)["rows"])
+    rnb_cache = Path(os.environ.get("TRAJSPEC_RNB_CACHE", "/home/xinhchen2/hhb/TrajSpecDec/results/cache_rnb_nusc_val.pt"))
     n_od = len(torch.load(od_cache, map_location="cpu", weights_only=False)["rows"])
-    av = run_one(
-        "AutoVLA-3B traj-only",
-        av_cache,
-        list(range(1000)),
-        list(range(1000, min(5000, n_av))),
-        to_od=False,
-        device=device,
-    )
     od = run_one(
         "OpenDriveVLA-0.5B",
         od_cache,
@@ -219,6 +212,17 @@ def main():
         to_od=False,  # cache[1500:] is already ego; mixed lidar prefix is skipped
         device=device,
     )
+    rnb = None
+    if rnb_cache.exists():
+        n_rnb = len(torch.load(rnb_cache, map_location="cpu", weights_only=False)["rows"])
+        rnb = run_one(
+            "R&B-EnCoRe-4B",
+            rnb_cache,
+            list(range(1000)),
+            list(range(1000, min(5000, n_rnb))),
+            to_od=False,
+            device=device,
+        )
     out = {
         "note": (
             "Lightweight predictors vs frozen VLA teacher on 1000 frames. "
@@ -226,9 +230,10 @@ def main():
             "MLP is extras-only residual on the bicycle, trained on teacher "
             "(disjoint split), no prefill hidden, not vs GT."
         ),
-        "autovla": av,
         "opendrive": od,
     }
+    if rnb is not None:
+        out["rnb"] = rnb
     path = RESULTS / "motivation_near_prefix.json"
     path.write_text(json.dumps(out, ensure_ascii=False, indent=2))
     slim = {
@@ -236,7 +241,7 @@ def main():
             p: {kk: v[p][kk] for kk in ("mean_l2_m", "frac_in_box", "frac_prefix_ge", "mean_n_accept", "frac_ge2")}
             for p in ("const_vel", "bicycle", "hist_extrap", "ego_residual_mlp")
         }
-        for k, v in (("autovla", av), ("opendrive", od))
+        for k, v in [(("opendrive", od))] + ([("rnb", rnb)] if rnb is not None else [])
     }
     print(json.dumps(slim, indent=2), flush=True)
     print("[write]", path, flush=True)
