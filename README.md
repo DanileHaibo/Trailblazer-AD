@@ -5,14 +5,6 @@ A lightweight draft head proposes waypoints; the frozen teacher verifies them in
 
 Paper: *Trailblazer: Speculative Trajectory Decoding for Faster Autoregressive Driving VLAs*
 
-<p align="center">
-  <img src="docs/figures/fig1_overview.png" width="92%" alt="Trailblazer vs native AR decoding">
-</p>
-
-<p align="center">
-  <img src="docs/figures/fig3_pipeline.png" width="92%" alt="Trailblazer pipeline">
-</p>
-
 ## Results (nuScenes val, live CUDA-sync)
 
 | | OpenDriveVLA-0.5B | R&B-EnCoRe (Qwen3-VL-4B) |
@@ -89,6 +81,6 @@ Use an **exclusive** free GPU for latency numbers. CUDA faults abort and checkpo
 trajspec/     draft head, geometric accept, live adapters, masked L2 metrics
 scripts/      live eval, dual-GPU launchers, merge + masked summarize
 weights/      trained draft heads
-docs/figures/ paper figures used above
 results/      live JSON outputs
 ```
+
