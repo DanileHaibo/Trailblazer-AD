@@ -1,0 +1,33 @@
+{
+  "source": "results/live_waypoints_rnb_full_6019_rerun.json",
+  "n": 6017,
+  "metric": "L2 with gt_ego_fut_masks (OpenDrive-official style; invalid steps contribute 0)",
+  "speedup": 2.703,
+  "mean_n_accept": 4.144,
+  "official_generate_ms": 2385.27,
+  "spec_e2e_ms": 882.48,
+  "teacher_l2_masked": {
+    "l2_1s": 0.2421,
+    "l2_2s": 0.4862,
+    "l2_3s": 0.8359,
+    "ade": 0.8359,
+    "l2_at_1s": 0.3284,
+    "l2_at_2s": 0.889,
+    "l2_at_3s": 1.7757
+  },
+  "spec_l2_masked": {
+    "l2_1s": 0.2669,
+    "l2_2s": 0.5319,
+    "l2_3s": 0.9054,
+    "ade": 0.9054,
+    "l2_at_1s": 0.3605,
+    "l2_at_2s": 0.9717,
+    "l2_at_3s": 1.8997
+  },
+  "paper_opendrive_stp3": {
+    "l2_1s": 0.15,
+    "l2_2s": 0.32,
+    "l2_3s": 0.57,
+    "avg": 0.35
+  }
+}

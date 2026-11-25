@@ -268,19 +268,26 @@ def pack_kinematics(cur: dict) -> dict | None:
     his_off = np.asarray(cur.get("gt_ego_his_trajs", []), dtype=np.float32)
     if his_off.size >= 2:
         hist = lidar_to_ego_xy(hist_abs_from_offsets(his_off, n=4))
-    gt = None
-    fut_off = np.asarray(cur.get("gt_ego_fut_trajs", []), dtype=np.float32)
-    fut_mask = np.asarray(cur.get("gt_ego_fut_masks", []), dtype=np.float32)
-    if fut_off.shape[0] >= 6:
-        gt = lidar_to_ego_xy(np.cumsum(fut_off[:6], axis=0))
-        if fut_mask.size >= 6 and fut_mask[:6].sum() < 6:
-            gt = None
+    gt = np.zeros((6, 2), dtype=np.float32)
+    fut_mask = np.ones(6, dtype=np.float32)
+    fut_off = np.asarray(cur.get("gt_ego_fut_trajs", []), dtype=np.float32).reshape(-1, 2)
+    fm = np.asarray(cur.get("gt_ego_fut_masks", []), dtype=np.float32).reshape(-1)
+    if fut_off.shape[0] >= 1:
+        if fut_off.shape[0] < 6:
+            pad = np.repeat(fut_off[-1:], 6 - fut_off.shape[0], axis=0) if fut_off.shape[0] else np.zeros((6, 2), np.float32)
+            fut_off = np.vstack([fut_off, pad])
+        gt = lidar_to_ego_xy(np.cumsum(fut_off[:6], axis=0)).astype(np.float32)
+    if fm.size >= 1:
+        if fm.size < 6:
+            fm = np.pad(fm, (0, 6 - fm.size))
+        fut_mask = fm[:6].astype(np.float32)
     return {
         "vehicle_velocity": [v0, 0.0],
         "driving_command": driving,
         "hist": hist,
         "lcf": lcf,
         "gt": gt,
+        "gt_mask": fut_mask,
         "token": cur.get("token", ""),
     }
 

@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from trajspec.accept import AcceptConfig, longest_prefix_accept
-from trajspec.metrics import l2_horizon
+from trajspec.metrics import l2_horizon, l2_uniad_at  # noqa: F401  re-export
 from trajspec.draft_head import DraftHead
 from trajspec.spec_loop import train_step
 
@@ -18,19 +18,6 @@ def mean_dict(rows, keys):
         vals = [r[k] for r in rows if r.get(k) is not None]
         out[k] = round(float(np.mean(vals)), 4) if vals else None
     return out
-
-
-def l2_uniad_at(pred: np.ndarray, gt: np.ndarray) -> dict:
-    """UniAD-style L2 at exactly 1s/2s/3s (2 Hz waypoints index 1, 3, 5)."""
-    n = min(len(pred), len(gt), 6)
-    if n == 0:
-        return {"l2_at_1s": None, "l2_at_2s": None, "l2_at_3s": None}
-    d = np.linalg.norm(pred[:n, :2] - gt[:n, :2], axis=-1)
-
-    def at(i):
-        return float(d[i]) if i < n else None
-
-    return {"l2_at_1s": at(1), "l2_at_2s": at(3), "l2_at_3s": at(5)}
 
 
 def spec_from_draft(draft, teacher, cfg: AcceptConfig, horizon: int = 6, seam: str = "blend"):

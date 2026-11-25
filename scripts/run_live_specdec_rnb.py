@@ -15,9 +15,8 @@ sys.path.insert(0, str(ROOT))
 
 from trajspec.accept import AcceptConfig
 from trajspec.adapters.rnb_waypoints import RnbWaypointsRuntime
-from trajspec.metrics import l2_horizon
+from trajspec.metrics import l2_horizon, l2_uniad_at
 from trajspec.draft_head import DraftHead, pack_extra, pack_speed
-from trajspec.eval_loop import l2_uniad_at
 from trajspec.nusc_data import VAL_PKL, load_infos, pack_sample_rnb, token_index
 
 
@@ -124,14 +123,17 @@ def main():
         extra = pack_extra(s)
         speed = pack_speed(s)
         gt = np.asarray(s["gt"][:6], dtype=np.float32)
+        gmask = np.asarray(s.get("gt_mask", np.ones(6)), dtype=np.float32).reshape(-1)[:6]
+        if gmask.size < 6:
+            gmask = np.pad(gmask, (0, 6 - gmask.size), constant_values=1.0)
         rec = {"token": s["token"]}
         t_off, teacher = sync_ms(lambda: runner.predict(s))
         rec["t_official_generate_ms"] = round(t_off, 2)
-        rec["official"] = {**l2_horizon(teacher[:6], gt), **l2_uniad_at(teacher[:6], gt)}
+        rec["official"] = {**l2_horizon(teacher[:6], gt, gmask), **l2_uniad_at(teacher[:6], gt, gmask)}
         spec_xy, spec_info = runner.spec_generate(s, head, extra, speed, cfg, horizon=6)
         rec["spec"] = {
-            **l2_horizon(spec_xy, gt),
-            **l2_uniad_at(spec_xy, gt),
+            **l2_horizon(spec_xy, gt, gmask),
+            **l2_uniad_at(spec_xy, gt, gmask),
             **{k: spec_info[k] for k in spec_info if k not in ("draft_text", "teacher_verify_text", "final_text")},
         }
         rec["n_accept"] = spec_info["n_accept"]

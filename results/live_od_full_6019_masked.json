@@ -1,0 +1,33 @@
+{
+  "source": "results/live_specdec_opendrive_full_6019.json",
+  "n": 6015,
+  "metric": "L2 with gt_ego_fut_masks (OpenDrive-official style; invalid steps contribute 0)",
+  "speedup": 1.821,
+  "mean_n_accept": 4.416,
+  "official_generate_ms": 1610.79,
+  "spec_e2e_ms": 884.68,
+  "teacher_l2_masked": {
+    "l2_1s": 0.5848,
+    "l2_2s": 0.8187,
+    "l2_3s": 0.9621,
+    "ade": 0.9621,
+    "l2_at_1s": 0.7415,
+    "l2_at_2s": 1.1326,
+    "l2_at_3s": 1.2673
+  },
+  "spec_l2_masked": {
+    "l2_1s": 0.6099,
+    "l2_2s": 0.8406,
+    "l2_3s": 0.9782,
+    "ade": 0.9782,
+    "l2_at_1s": 0.7693,
+    "l2_at_2s": 1.1479,
+    "l2_at_3s": 1.2688
+  },
+  "paper_opendrive_stp3": {
+    "l2_1s": 0.15,
+    "l2_2s": 0.32,
+    "l2_3s": 0.57,
+    "avg": 0.35
+  }
+}
