@@ -5,6 +5,10 @@ A lightweight draft head proposes waypoints; the frozen teacher verifies them in
 
 Paper: *Trailblazer: Speculative Trajectory Decoding for Faster Autoregressive Driving VLAs*
 
+<p align="center">
+  <img src="docs/figures/fig1_overview.png" width="92%" alt="Trailblazer vs native AR decoding">
+</p>
+
 ## Results (nuScenes val, live CUDA-sync)
 
 | | OpenDriveVLA-0.5B | R&B-EnCoRe (Qwen3-VL-4B) |
